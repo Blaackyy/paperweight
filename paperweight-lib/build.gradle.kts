@@ -29,4 +29,6 @@ dependencies {
     implementation(variantOf(libs.diffpatch) { classifier("all") }) {
         isTransitive = false
     }
+
+    testImplementation(libs.mockk)
 }

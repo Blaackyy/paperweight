@@ -18,7 +18,6 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 @CacheableTask
-@OptIn(ExperimentalPathApi::class)
 abstract class CollectATsFromPatches : BaseTask() {
 
     @get:PathSensitive(PathSensitivity.NONE)
