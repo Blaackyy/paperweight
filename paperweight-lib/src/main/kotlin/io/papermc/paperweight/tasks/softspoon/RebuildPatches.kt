@@ -77,7 +77,7 @@ abstract class RebuildPatches : DefaultTask() {
         val inputDir = input.convertToPath()
         val baseDir = base.convertToPath()
 
-        val ats = if (atFile.isPresent) AccessTransformFormats.FML.read(atFile.convertToPath()) else AccessTransformSet.create()
+        val oldAts = if (atFile.isPresent) AccessTransformFormats.FML.read(atFile.convertToPath()) else AccessTransformSet.create()
 
         val patchesCreated = baseDir.walk()
             .map { it.relativeTo(baseDir).toString().replace("\\", "/") }
@@ -85,7 +85,7 @@ abstract class RebuildPatches : DefaultTask() {
                 !it.startsWith(".git") && !it.endsWith(".nbt") && !it.endsWith(".mcassetsroot")
             }
             .sumOf {
-                diffFile(inputDir, baseDir, it, patchDir, ats)
+                diffFile(inputDir, baseDir, it, patchDir, oldAts)
             }
 
         logger.lifecycle("Rebuilt $patchesCreated patches")

@@ -5,13 +5,17 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.*
+import kotlin.test.assertEquals
 import org.eclipse.jgit.api.Git
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Assertions
 
 open class TaskTest {
 
-    fun setupProject() = ProjectBuilder.builder().withGradleUserHomeDir(File("build")).withProjectDir(File("")).build()
+    fun setupProject() = ProjectBuilder.builder()
+        .withGradleUserHomeDir(File("build"))
+        .withProjectDir(File(""))
+        .build()
 
     fun setupDir(tempDir: Path, testResource: Path, name: String): Path {
         val temp = tempDir.resolve(name).toFile()
@@ -62,5 +66,62 @@ open class TaskTest {
         git.commit().setMessage("Test").call()
 
         git.close()
+    }
+
+    fun createJar(tempDir: Path, testResource: Path, name: String): Path {
+        val sourceFile = tempDir.resolve(name + ".java")
+        testResource.resolve(name + ".java").copyTo(sourceFile)
+
+        // run javac on the file
+        ProcessBuilder()
+            .directory(tempDir.toFile())
+            .command("javac", sourceFile.toString())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+
+        // create jar
+        ProcessBuilder()
+            .directory(tempDir.toFile())
+            .command("jar", "-cf", name + ".jar", name + ".class")
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+
+        return tempDir.resolve(name + ".jar")
+    }
+
+    fun compareJar(tempDir: Path, testResource: Path, fileName: String, className: String) {
+        val outputJar = tempDir.resolve(fileName + ".jar")
+        val expectedOutputFile = testResource.resolve(fileName + ".javap")
+
+        // unpack jar
+        ProcessBuilder()
+            .directory(tempDir.toFile())
+            .command("jar", "-xf", outputJar.toString())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+
+        // disassemble class
+        val process = ProcessBuilder()
+            .directory(tempDir.toFile())
+            .command("javap", "-p", "-c", className + ".class")
+            .redirectErrorStream(true)
+            .start()
+
+        var actualOutput = process.inputStream.bufferedReader().readText()
+        val expectedOutput = expectedOutputFile.readText()
+
+        // cleanup output
+        val lines = actualOutput.split("\n")
+        if (lines[0].startsWith("Picked up JAVA_TOOL_OPTIONS")) {
+            actualOutput = actualOutput.replace(lines[0] + "\n", "")
+        }
+        actualOutput = actualOutput.replace("\r\n", "\n")
+
+        process.waitFor()
+
+        assertEquals(expectedOutput, actualOutput, "Output doesn't match expected")
     }
 }

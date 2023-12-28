@@ -8,7 +8,6 @@ import io.papermc.paperweight.tasks.patchremapv2.GeneratePatchRemapMappings
 import io.papermc.paperweight.tasks.patchremapv2.RemapCBPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyPatchesFuzzy
-import io.papermc.paperweight.tasks.softspoon.CollectATsFromPatches
 import io.papermc.paperweight.tasks.softspoon.RebuildPatches
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.*
@@ -68,14 +67,19 @@ open class SoftSpoonTasks(
     val collectAccessTransform by tasks.registering(CollectATsFromPatches::class) {
         group = "mache"
 
-        patchDir.set(project.layout.projectDirectory.dir("patches/sources"))
+        patchDir.set(project.layout.projectDirectory.dir("patches/feature"))
+    }
+
+    val mergeCollectedAts by tasks.registering<MergeAccessTransforms> {
+        firstFile.set(project.ext.paper.additionalAts.fileExists(project))
+        secondFile.set(collectAccessTransform.flatMap { it.outputFile })
     }
 
     val applyAccessTransform by tasks.registering(ApplyAccessTransform::class) {
         group = "mache"
 
         inputJar.set(macheDecompileJar.flatMap { it.outputJar })
-        atFile.set(collectAccessTransform.flatMap { it.outputFile })
+        atFile.set(mergeCollectedAts.flatMap { it.outputFile })
     }
 
     val setupMacheSources by tasks.registering(SetupVanilla::class) {
@@ -137,7 +141,8 @@ open class SoftSpoonTasks(
         description = "Rebuilds patches to the vanilla sources"
 
         minecraftClasspath.from(macheMinecraftExtended)
-        atFile.set(collectAccessTransform.flatMap { it.outputFile })
+        atFile.set(project.ext.paper.additionalAts.fileExists(project))
+        atFileOut.set(project.ext.paper.additionalAts.fileExists(project))
 
         base.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
         input.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/java") })
