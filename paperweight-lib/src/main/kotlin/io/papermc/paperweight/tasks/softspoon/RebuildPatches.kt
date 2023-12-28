@@ -28,6 +28,8 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.UntrackedTask
 import org.openrewrite.InMemoryExecutionContext
@@ -41,12 +43,16 @@ abstract class RebuildPatches : DefaultTask() {
     @get:InputDirectory
     abstract val base: DirectoryProperty
 
-    @get:InputDirectory
+    @get:OutputDirectory
     abstract val patches: DirectoryProperty
 
     @get:Optional
     @get:InputFile
     abstract val atFile: RegularFileProperty
+
+    @get:Optional
+    @get:OutputFile
+    abstract val atFileOut: RegularFileProperty
 
     @get:Optional
     @get:CompileClasspath
@@ -99,6 +105,10 @@ abstract class RebuildPatches : DefaultTask() {
         sourceLines = handleATInSource(sourceLines, ats, className, source)
         decompLines = handleATInBase(decompLines, ats, decompRoot, decomp)
 
+        if (!ats.classes.isEmpty()) {
+            oldAts.merge(ats)
+            AccessTransformFormats.FML.write(atFileOut.convertToPath(), oldAts)
+        }
 
         val patch = DiffUtils.diff(decompLines, sourceLines)
         if (patch.deltas.isEmpty()) {
@@ -113,26 +123,9 @@ abstract class RebuildPatches : DefaultTask() {
             contextLines.get(),
         )
 
-        val atHeader = mutableListOf<String>()
-
-        // TODO load existing ATs for this file into the list
-        println("oldAts = $oldAts")
-        println("ats = $ats")
-        ats.merge(oldAts)
-
-        ats.getClass(className).ifPresent { atClass ->
-            atClass.methods.forEach {
-                atHeader.add("AT: ${atToString(it.value)} ${it.key.name}${it.key.descriptor}")
-            }
-            atClass.fields.forEach {
-                atHeader.add("AT: ${atToString(it.value)} ${it.key}")
-            }
-            atHeader.add("===================================================================\n")
-        }
-
         val patchFile = patchDir.resolve("$relativePath.patch")
         patchFile.parent.createDirectories()
-        patchFile.writeText(atHeader.joinToString("\n") + unifiedPatch.joinToString("\n", postfix = "\n"), Charsets.UTF_8)
+        patchFile.writeText(unifiedPatch.joinToString("\n", postfix = "\n"), Charsets.UTF_8)
 
         return 1
     }
