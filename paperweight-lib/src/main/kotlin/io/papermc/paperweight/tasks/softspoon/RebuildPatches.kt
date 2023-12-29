@@ -4,6 +4,7 @@ import atFromString
 import atToString
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
+import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.util.*
 import io.papermc.restamp.Restamp
 import io.papermc.restamp.RestampContextConfiguration
@@ -35,7 +36,7 @@ import org.gradle.api.tasks.UntrackedTask
 import org.openrewrite.InMemoryExecutionContext
 
 @UntrackedTask(because = "Always rebuild patches")
-abstract class RebuildPatches : DefaultTask() {
+abstract class RebuildPatches : BaseTask() {
 
     @get:InputDirectory
     abstract val input: DirectoryProperty
@@ -61,13 +62,8 @@ abstract class RebuildPatches : DefaultTask() {
     @get:Input
     abstract val contextLines: Property<Int>
 
-    @get:Inject
-    abstract val layout: ProjectLayout
-
-    init {
-        run {
-            contextLines.convention(3)
-        }
+    override fun init() {
+        contextLines.convention(3)
     }
 
     @TaskAction
@@ -159,11 +155,14 @@ abstract class RebuildPatches : DefaultTask() {
 
     private fun handleATInSource(sourceLines: List<String>, newAts: AccessTransformSet, className: String, source: Path): ArrayList<String> {
         val fixedLines = ArrayList<String>(sourceLines.size)
+        var requiresWrite = false
         sourceLines.forEach { line ->
             if (!line.contains("// Paper-AT: ")) {
                 fixedLines.add(line)
                 return@forEach
             }
+
+            requiresWrite = true
 
             val split = line.split("// Paper-AT: ")
             val at = split[1]
@@ -181,7 +180,9 @@ abstract class RebuildPatches : DefaultTask() {
             fixedLines.add(split[0])
         }
 
-        source.writeLines(fixedLines, Charsets.UTF_8)
+        if (requiresWrite) {
+            source.writeText(fixedLines.joinToString("\n"), Charsets.UTF_8)
+        }
 
         return fixedLines
     }

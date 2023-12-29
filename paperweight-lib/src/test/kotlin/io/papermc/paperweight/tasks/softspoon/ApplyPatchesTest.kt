@@ -1,12 +1,10 @@
 package io.papermc.paperweight.tasks.softspoon
 
 import io.papermc.paperweight.tasks.*
-import java.io.File
 import java.nio.file.Path
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.gradle.kotlin.dsl.*
-import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.io.TempDir
 
 class ApplyPatchesTest : TaskTest() {
@@ -20,7 +18,7 @@ class ApplyPatchesTest : TaskTest() {
 
     @Test
     fun `should apply patches`(@TempDir tempDir: Path) {
-        var testResource = Path.of("src/test/resources/apply_patches")
+        val testResource = Path.of("src/test/resources/apply_patches")
         val testInput = testResource.resolve("input")
 
         val input = setupDir(tempDir, testInput, "base").toFile()

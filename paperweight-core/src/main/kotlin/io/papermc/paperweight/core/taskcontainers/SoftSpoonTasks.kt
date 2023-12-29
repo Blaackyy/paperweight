@@ -8,6 +8,7 @@ import io.papermc.paperweight.tasks.patchremapv2.GeneratePatchRemapMappings
 import io.papermc.paperweight.tasks.patchremapv2.RemapCBPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyPatchesFuzzy
+import io.papermc.paperweight.tasks.softspoon.ApplySourceAT
 import io.papermc.paperweight.tasks.softspoon.RebuildPatches
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.*
@@ -75,21 +76,16 @@ open class SoftSpoonTasks(
         secondFile.set(collectAccessTransform.flatMap { it.outputFile })
     }
 
-    val applyAccessTransform by tasks.registering(ApplyAccessTransform::class) {
-        group = "mache"
-
-        inputJar.set(macheDecompileJar.flatMap { it.outputJar })
-        atFile.set(mergeCollectedAts.flatMap { it.outputFile })
-    }
-
     val setupMacheSources by tasks.registering(SetupVanilla::class) {
         group = "mache"
-        description = "Setup vanilla source dir."
+        description = "Setup vanilla source dir (apllying mache patches and paper ATs)."
 
         mache.from(project.configurations.named(MACHE_CONFIG))
         patches.set(layout.cache.resolve(PATCHES_FOLDER))
+        ats.set(mergeCollectedAts.flatMap { it.outputFile })
+        minecraftClasspath.from(macheMinecraft)
 
-        inputFile.set(applyAccessTransform.flatMap { it.outputJar })
+        inputFile.set(macheDecompileJar.flatMap { it.outputJar })
         predicate.set { Files.isRegularFile(it) && it.toString().endsWith(".java")}
         outputDir.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
     }

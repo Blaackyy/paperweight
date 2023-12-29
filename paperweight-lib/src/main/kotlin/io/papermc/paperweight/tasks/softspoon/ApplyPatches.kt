@@ -1,5 +1,6 @@
 package io.papermc.paperweight.tasks.softspoon
 
+import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.patches.*
 import javax.inject.Inject
@@ -20,7 +21,7 @@ import org.gradle.api.tasks.UntrackedTask
 import org.gradle.process.ExecOperations
 
 @UntrackedTask(because = "Always apply patches")
-abstract class ApplyPatches : DefaultTask() {
+abstract class ApplyPatches : BaseTask() {
 
     @get:PathSensitive(PathSensitivity.NONE)
     @get:InputDirectory
@@ -42,14 +43,9 @@ abstract class ApplyPatches : DefaultTask() {
     @get:Inject
     abstract val exec: ExecOperations
 
-    @get:Inject
-    abstract val layout: ProjectLayout
-
-    init {
-        run {
-            useNativeDiff.convention(false)
-            patchExecutable.convention("patch")
-        }
+    override fun init() {
+        useNativeDiff.convention(false)
+        patchExecutable.convention("patch")
     }
 
     @TaskAction
@@ -71,7 +67,7 @@ abstract class ApplyPatches : DefaultTask() {
     open fun setup() {
         output.convertToPath().ensureClean()
         Git.cloneRepository().setBranch("main").setURI("file://" + input.convertToPath().toString()).setDirectory(output.convertToPath().toFile())
-                .call().close()
+            .call().close()
     }
 
     open fun commit() {

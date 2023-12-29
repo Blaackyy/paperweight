@@ -3,10 +3,14 @@ package io.papermc.paperweight.tasks.mache
 import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.patches.*
+import io.papermc.restamp.Restamp
+import io.papermc.restamp.RestampContextConfiguration
+import io.papermc.restamp.RestampInput
 import java.nio.file.Path
 import java.util.function.Predicate
 import javax.inject.Inject
 import kotlin.io.path.*
+import org.cadixdev.at.io.AccessTransformFormats
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.PersonIdent
 import org.gradle.api.file.ConfigurableFileCollection
@@ -15,8 +19,8 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.process.ExecOperations
+import org.openrewrite.InMemoryExecutionContext
 
-@CacheableTask
 abstract class SetupVanilla : BaseTask() {
 
     @get:PathSensitive(PathSensitivity.NONE)
@@ -31,6 +35,15 @@ abstract class SetupVanilla : BaseTask() {
 
     @get:Internal
     abstract val patches: DirectoryProperty
+
+    @get:Optional
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val ats: RegularFileProperty
+
+    @get:Optional
+    @get:CompileClasspath
+    abstract val minecraftClasspath: ConfigurableFileCollection
 
     @get:Optional
     @get:Classpath
@@ -54,22 +67,22 @@ abstract class SetupVanilla : BaseTask() {
 
     @TaskAction
     fun run() {
-        val path = outputDir.convertToPath().ensureClean()
+        val outputPath = outputDir.convertToPath().ensureClean()
 
-        // copy initial sources
+        println("Copy initial sources...")
         inputFile.convertToPath().openZip().walk()
             .filter(predicate.get())
             .forEach {
-                val target = path.resolve(it.toString().substring(1))
+                val target = outputPath.resolve(it.toString().substring(1))
                 target.parent.createDirectories()
                 it.copyTo(target, true)
             }
 
-        // setup git repo
+        println("Setup git repo...")
         val vanillaIdent = PersonIdent("Vanilla", "vanilla@papermc.io")
 
         val git = Git.init()
-            .setDirectory(path.toFile())
+            .setDirectory(outputPath.toFile())
             .setInitialBranch("main")
             .call()
         git.add().addFilepattern(".").call()
@@ -88,8 +101,8 @@ abstract class SetupVanilla : BaseTask() {
                 zip.getPath("patches").copyRecursivelyTo(patchesFolder)
             }
 
-            // patch
-            val result = createPatcher().applyPatches(path, patches.convertToPath(), path, path)
+            println("Applying mache patches...")
+            val result = createPatcher().applyPatches(outputPath, patches.convertToPath(), outputPath, outputPath)
 
             val macheIdent = PersonIdent("Mache", "mache@automated.papermc.io")
             git.add().addFilepattern(".").call()
@@ -107,6 +120,39 @@ abstract class SetupVanilla : BaseTask() {
                 git.close()
                 throw Exception("Failed to apply ${result.failures.size} patches")
             }
+        }
+
+        if (ats.isPresent()) {
+            val classPath = minecraftClasspath.files.map { it.toPath() }.toMutableList()
+            classPath.add(outputPath)
+
+            println("Applying access transformers...")
+            val configuration = RestampContextConfiguration.builder()
+                .accessTransformers(ats.convertToPath(), AccessTransformFormats.FML)
+                .sourceRoot(outputPath)
+                .sourceFilesFromAccessTransformers()
+                .classpath(classPath)
+                .executionContext(InMemoryExecutionContext { it.printStackTrace() })
+                .failWithNotApplicableAccessTransformers()
+                .build()
+
+            val parsedInput = RestampInput.parseFrom(configuration)
+            val results = Restamp.run(parsedInput).allResults
+
+            results.forEach { result ->
+                if (result.after != null) {
+                    outputPath.resolve(result.after.sourcePath).writeText(result.after.printAll())
+                }
+            }
+
+            val macheIdent = PersonIdent("ATs", "ats@automated.papermc.io")
+            git.add().addFilepattern(".").call()
+            git.tag().setName("ATs").setTagger(macheIdent).setSigned(false).call()
+            git.commit()
+                .setMessage("ATs")
+                .setAuthor(macheIdent)
+                .setSign(false)
+                .call()
         }
 
         git.close()

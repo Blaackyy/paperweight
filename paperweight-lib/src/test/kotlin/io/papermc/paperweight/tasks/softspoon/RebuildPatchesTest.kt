@@ -21,7 +21,7 @@ class RebuildPatchesTest: TaskTest() {
 
     @Test
     fun `should rebuild patches`(@TempDir tempDir: Path) {
-        var testResource = Path.of("src/test/resources/rebuild_patches")
+        val testResource = Path.of("src/test/resources/rebuild_patches")
         val testInput = testResource.resolve("input")
 
         val source = setupDir(tempDir, testInput, "source").toFile()

@@ -46,6 +46,28 @@ open class TaskTest {
         }
     }
 
+    fun compareZip(tempDir: Path, testResource: Path, name: String) {
+        val actualOutput = tempDir.resolve(name)
+        val expectedOutput = testResource.resolve(name)
+
+        compareZip(actualOutput, expectedOutput)
+    }
+
+    fun compareZip(actualOutput: Path, expectedOutput: Path) {
+        val actualZip = actualOutput.openZip()
+        val actualFiles = actualZip.walk().filter { Files.isRegularFile(it) }.toList()
+        val expectedZip = expectedOutput.openZip()
+        val expectedFiles = expectedZip.walk().filter { Files.isRegularFile(it) }.toList()
+
+        Assertions.assertEquals(expectedFiles.size, actualFiles.size, "Expected $expectedFiles files, got $actualFiles")
+
+        expectedFiles.forEach { expectedFile ->
+            val actualFile = actualZip.getPath(expectedFile.toString())
+
+            compareFile(actualFile, expectedFile)
+        }
+    }
+
     fun compareFile(tempDir: Path, testResource: Path, name: String) {
         val actualOutput = tempDir.resolve(name)
         val expectedOutput = testResource.resolve(name)
@@ -66,6 +88,19 @@ open class TaskTest {
         git.commit().setMessage("Test").call()
 
         git.close()
+    }
+
+    fun createZip(tempDir: Path, testResource: Path, zipName: String, vararg fileNames: String, ): Path {
+        val targetZip = tempDir.resolve(zipName)
+
+        targetZip.writeZip().use { zip ->
+            fileNames.forEach { fileName ->
+                val sourceFile = testResource.resolve(fileName)
+                zip.getPath(fileName).writeText(sourceFile.readText())
+            }
+        }
+
+        return targetZip
     }
 
     fun createJar(tempDir: Path, testResource: Path, name: String): Path {
