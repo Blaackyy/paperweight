@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' apply false
+    id 'io.papermc.paperweight.core'
+}
+
+allprojects {
+    apply plugin: 'java'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    mache files('mache.zip') // use fake mache for testing
+}
+
+paperweight {
+    softSpoon = true
+
+    // use fake mojang data for testing
+    minecraftVersion = 'fake'
+    minecraftManifestUrl = 'file://project/fake_mojang/version_manifest.json'
+
+    serverProject = project(':test-server')
+}

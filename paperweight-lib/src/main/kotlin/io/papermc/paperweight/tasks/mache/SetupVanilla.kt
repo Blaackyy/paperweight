@@ -27,7 +27,7 @@ abstract class SetupVanilla : BaseTask() {
     @get:InputFile
     abstract val inputFile: RegularFileProperty
 
-    @get:Input
+    @get:Internal
     abstract val predicate: Property<Predicate<Path>>
 
     @get:OutputDirectory

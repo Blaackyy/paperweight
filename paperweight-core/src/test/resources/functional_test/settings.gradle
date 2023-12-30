@@ -1,0 +1,4 @@
+rootProject.name = 'functional_test'
+
+include 'test-api'
+include 'test-server'

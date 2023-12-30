@@ -42,6 +42,7 @@ open class PaperweightCoreExtension(project: Project, objects: ObjectFactory, la
     val workDir: DirectoryProperty = objects.dirWithDefault(layout, "work")
 
     val minecraftVersion: Property<String> = objects.property()
+    val minecraftManifestUrl: Property<String> = objects.property<String>().convention(MC_MANIFEST_URL)
     val serverProject: Property<Project> = objects.property()
 
     val mainClass: Property<String> = objects.property<String>().convention("org.bukkit.craftbukkit.Main")

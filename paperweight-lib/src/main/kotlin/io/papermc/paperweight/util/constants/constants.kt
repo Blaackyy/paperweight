@@ -73,8 +73,6 @@ const val PAPERWEIGHT_DOWNSTREAM_FILE_PROPERTY = "paperweightDownstreamDataFile"
 
 private const val JARS_PATH = "$PAPER_PATH/jars"
 const val MINECRAFT_JARS_PATH = "$JARS_PATH/minecraft"
-const val BUNDLE_JAR_PATH = "$MINECRAFT_JARS_PATH/bundle.jar"
-const val SERVER_JAR_PATH = "$MINECRAFT_JARS_PATH/server.jar"
 const val MINECRAFT_SOURCES_PATH = "$JARS_PATH/minecraft-sources"
 
 const val SPIGOT_JARS_PATH = "$JARS_PATH/spigot"
@@ -108,6 +106,7 @@ const val SERVER_VERSION_JSON = "$BUNDLER_PATH/version.json"
 const val SERVER_LIBRARIES_TXT = "$BUNDLER_PATH/ServerLibraries.txt"
 const val SERVER_LIBRARIES_LIST = "$BUNDLER_PATH/libraries.list"
 const val SERVER_VERSIONS_LIST = "$BUNDLER_PATH/versions.list"
+const val SERVER_JAR = "$BUNDLER_PATH/server.jar"
 
 private const val SETUP_CACHE = "$PAPER_PATH/setupCache"
 private const val TASK_CACHE = "$PAPER_PATH/taskCache"

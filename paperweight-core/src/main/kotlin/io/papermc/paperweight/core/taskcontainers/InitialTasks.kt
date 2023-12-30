@@ -45,7 +45,7 @@ open class InitialTasks(
 ) {
 
     val downloadMcManifest by tasks.registering<DownloadTask> {
-        url.set(MC_MANIFEST_URL)
+        url.set(project.ext.minecraftManifestUrl)
         outputFile.set(cache.resolve(MC_MANIFEST))
 
         doNotTrackState("The Minecraft manifest is a changing resource")
@@ -94,5 +94,6 @@ open class InitialTasks(
         serverLibrariesList.set(cache.resolve(SERVER_LIBRARIES_LIST))
         serverVersionsList.set(cache.resolve(SERVER_VERSIONS_LIST))
         serverLibraryJars.set(cache.resolve(MINECRAFT_JARS_PATH))
+        serverJar.set(cache.resolve(SERVER_JAR))
     }
 }

@@ -8,19 +8,16 @@ import io.papermc.paperweight.tasks.patchremapv2.GeneratePatchRemapMappings
 import io.papermc.paperweight.tasks.patchremapv2.RemapCBPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyPatchesFuzzy
-import io.papermc.paperweight.tasks.softspoon.ApplySourceAT
 import io.papermc.paperweight.tasks.softspoon.RebuildPatches
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.*
-import io.papermc.paperweight.util.data.*
 import io.papermc.paperweight.util.data.mache.*
 import java.nio.file.Files
+import java.nio.file.Path
 import kotlin.io.path.*
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.kotlin.dsl.*
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
@@ -43,7 +40,7 @@ open class SoftSpoonTasks(
 
     val macheRemapJar by tasks.registering(RemapJar::class) {
         group = "mache"
-        serverJar.set(layout.cache.resolve(SERVER_JAR_PATH))
+        serverJar.set(allTasks.extractFromBundler.flatMap { it.serverJar })
         serverMappings.set(allTasks.downloadMappings.flatMap { it.outputFile })
 
         codebookClasspath.from(macheCodebook)
@@ -81,12 +78,12 @@ open class SoftSpoonTasks(
         description = "Setup vanilla source dir (apllying mache patches and paper ATs)."
 
         mache.from(project.configurations.named(MACHE_CONFIG))
-        patches.set(layout.cache.resolve(PATCHES_FOLDER))
+        patches.set(layout.cache.resolve(PATCHES_FOLDER)) // TODO extract mache
         ats.set(mergeCollectedAts.flatMap { it.outputFile })
         minecraftClasspath.from(macheMinecraft)
 
         inputFile.set(macheDecompileJar.flatMap { it.outputJar })
-        predicate.set { Files.isRegularFile(it) && it.toString().endsWith(".java")}
+        predicate.set { Files.isRegularFile(it) && it.toString().endsWith(".java") }
         outputDir.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
     }
 
@@ -95,7 +92,7 @@ open class SoftSpoonTasks(
         description = "Setup vanilla resources dir"
 
         inputFile.set(macheDecompileJar.flatMap { it.outputJar })
-        predicate.set { Files.isRegularFile(it) && !it.toString().endsWith(".java")}
+        predicate.set { Files.isRegularFile(it) && !it.toString().endsWith(".java") }
         outputDir.set(layout.cache.resolve(BASE_PROJECT).resolve("resources"))
     }
 
@@ -191,65 +188,11 @@ open class SoftSpoonTasks(
     }
 
     fun afterEvaluate() {
-        val download = project.download.get()
-
-        // todo all this should be a dependency resolution hook like
-        // https://github.com/PaperMC/paperweight/blob/88edb5ce16a794cd72d33c0a750fd9f334e5677f/paperweight-userdev/src/main/kotlin/io/papermc/paperweight/userdev/PaperweightUser.kt#L237-L246
-        // https://discord.com/channels/289587909051416579/776169605760286730/1155170101599940698
+        // load mache
         mache = this.project.configurations.named(MACHE_CONFIG).get().singleFile.toPath().openZip().use { zip ->
             return@use gson.fromJson<MacheMeta>(zip.getPath("/mache.json").readLines().joinToString("\n"))
         }
-        println("Loading mache ${mache.version}")
-
-        // download manifests
-        val mcManifestFile = project.layout.cache.resolve(MC_MANIFEST)
-        download.download(MC_MANIFEST_URL, mcManifestFile)
-        val mcManifest = gson.fromJson<MinecraftManifest>(mcManifestFile)
-
-        val mcVersionManifestFile = project.layout.cache.resolve(VERSION_JSON)
-        val mcVersion = mcManifest.versions.firstOrNull { it.id == mache.version }
-            ?: throw RuntimeException("Unknown Minecraft version ${mache.version}")
-        download.download(mcVersion.url, mcVersionManifestFile, Hash(mcVersion.sha1, HashingAlgorithm.SHA1))
-        val mcVersionManifest = gson.fromJson<MinecraftVersionManifest>(mcVersionManifestFile)
-
-        val bundleJar = project.layout.cache.resolve(BUNDLE_JAR_PATH)
-        val serverJar = project.layout.cache.resolve(SERVER_JAR_PATH)
-        // download bundle and mappings
-        runBlocking {
-            awaitAll(
-                download.downloadAsync(
-                    mcVersionManifest.downloads["server"]!!.url,
-                    bundleJar,
-                    Hash(mcVersionManifest.downloads["server"]!!.sha1, HashingAlgorithm.SHA1),
-                ),
-                download.downloadAsync(
-                    mcVersionManifest.downloads["server_mappings"]!!.url,
-                    project.layout.cache.resolve(SERVER_MAPPINGS),
-                    Hash(mcVersionManifest.downloads["server_mappings"]!!.sha1, HashingAlgorithm.SHA1),
-                ),
-            )
-        }
-
-        // extract bundle
-        val libs = bundleJar.openZip().use { zip ->
-            val versions = zip.getPath("META-INF", "versions.list").readLines()
-                .map { it.split('\t') }
-                .associate { it[1] to it[2] }
-            val serverJarPath = zip.getPath("META-INF", "versions", versions[mache.version])
-            serverJarPath.copyTo(serverJar, true)
-
-            val librariesList = zip.getPath("META-INF", "libraries.list")
-
-            return@use librariesList.useLines { lines ->
-                return@useLines lines.map { line ->
-                    val parts = line.split(whitespace)
-                    if (parts.size != 3) {
-                        throw Exception("libraries.list file is invalid")
-                    }
-                    return@map parts[1]
-                }.toList()
-            }
-        }
+        println("Loaded mache ${mache.version}")
 
         // setup repos
         this.project.repositories {
@@ -270,16 +213,37 @@ open class SoftSpoonTasks(
             mavenCentral()
         }
 
-        this.project.dependencies {
-            // setup mc deps
-            libs.forEach {
-                "macheMinecraft"(it)
-                "macheMinecraftExtended"(it)
+        val libsFile = project.layout.cache.resolve(SERVER_LIBRARIES_TXT)
+
+        // setup mc deps
+        macheMinecraft {
+            withDependencies {
+                project.dependencies {
+                    val libs = libsFile.convertToPathOrNull()
+                    if (libs != null && libs.exists()) {
+                        libs.forEachLine { line ->
+                            add(create(line))
+                        }
+                    }
+                }
             }
+        }
+        macheMinecraftExtended {
+            withDependencies {
+                project.dependencies {
+                    val libs = libsFile.convertToPathOrNull()
+                    if (libs != null && libs.exists()) {
+                        libs.forEachLine { line ->
+                            add(create(line))
+                        }
+                    }
+                    add(create(project.files(project.layout.cache.resolve(FINAL_REMAPPED_CODEBOOK_JAR))))
+                }
+            }
+        }
 
-            "macheMinecraftExtended"(project.files(project.layout.cache.resolve(FINAL_REMAPPED_CODEBOOK_JAR)))
-
-            // setup mache deps
+        // setup mache deps
+        this.project.dependencies {
             mache.dependencies.codebook.forEach {
                 "macheCodebook"("${it.group}:${it.name}:${it.version}")
             }
@@ -294,10 +258,10 @@ open class SoftSpoonTasks(
             }
         }
 
-        this.project.ext.serverProject.get().setupServerProject(mache, libs);
+        this.project.ext.serverProject.get().setupServerProject(libsFile);
     }
 
-    private fun Project.setupServerProject(mache: MacheMeta, libs: List<String>) {
+    private fun Project.setupServerProject(libsFile: Path) {
         if (!projectDir.exists()) {
             return
         }
@@ -307,8 +271,11 @@ open class SoftSpoonTasks(
             withDependencies {
                 dependencies {
                     // setup mc deps
-                    libs.forEach {
-                        "macheMinecraft"(it)
+                    val libs = libsFile.convertToPathOrNull()
+                    if (libs != null && libs.exists()) {
+                        libs.forEachLine { line ->
+                            add(create(line))
+                        }
                     }
                 }
             }

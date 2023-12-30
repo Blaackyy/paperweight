@@ -95,7 +95,9 @@ val ProjectLayout.cache: Path
 fun ProjectLayout.cacheDir(path: String) = projectDirectory.dir(".gradle/$CACHE_PATH").dir(path)
 fun ProjectLayout.initSubmodules() {
     Git.checkForGit()
-    Git(projectDirectory.path)("submodule", "update", "--init").executeOut()
+    if (Git.checkForGitRepo(projectDirectory.path)) {
+        Git(projectDirectory.path)("submodule", "update", "--init").executeOut()
+    }
 }
 
 fun <T : FileSystemLocation> Provider<out T>.fileExists(project: Project): Provider<out T?> {

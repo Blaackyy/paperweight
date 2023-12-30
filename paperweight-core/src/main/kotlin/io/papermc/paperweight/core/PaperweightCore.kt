@@ -49,7 +49,9 @@ class PaperweightCore : Plugin<Project> {
 
         val ext = target.extensions.create(PAPERWEIGHT_EXTENSION, PaperweightCoreExtension::class, target)
 
-        target.gradle.sharedServices.registerIfAbsent(DOWNLOAD_SERVICE_NAME, DownloadService::class) {}
+        target.gradle.sharedServices.registerIfAbsent(DOWNLOAD_SERVICE_NAME, DownloadService::class) {
+            parameters.projectPath.set(target.projectDir)
+        }
 
         target.tasks.register<Delete>("cleanCache") {
             group = "paper"

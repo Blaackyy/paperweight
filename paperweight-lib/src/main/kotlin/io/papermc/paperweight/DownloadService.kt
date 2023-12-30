@@ -47,8 +47,13 @@ import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import org.gradle.api.file.DirectoryProperty
 
-abstract class DownloadService : BuildService<BuildServiceParameters.None>, AutoCloseable {
+abstract class DownloadService : BuildService<DownloadService.Params>, AutoCloseable {
+
+    interface Params : BuildServiceParameters {
+        val projectPath: DirectoryProperty
+    }
 
     private companion object {
         val LOGGER: Logger = Logging.getLogger(DownloadService::class.java)
@@ -78,7 +83,7 @@ abstract class DownloadService : BuildService<BuildServiceParameters.None>, Auto
             return
         }
         val dlHash = target.hashFile(hash.algorithm).asHexString().lowercase(Locale.ENGLISH)
-        if (dlHash == hash.valueLower) {
+        if (hash.value == "" || dlHash == hash.valueLower) {
             return
         }
         LOGGER.warn(
@@ -98,6 +103,15 @@ abstract class DownloadService : BuildService<BuildServiceParameters.None>, Auto
 
     private fun download(source: URL, target: Path) {
         target.parent.createDirectories()
+
+        if (source.protocol == "file") {
+            var path = source.toString().replace("file://", "")
+            if (source.host == "project") {
+                path = path.replace("project", parameters.projectPath.path.absolutePathString())
+            }
+            Path.of(path).copyTo(target, overwrite = true)
+            return
+        }
 
         val etagDir = target.resolveSibling("etags")
         etagDir.createDirectories()
