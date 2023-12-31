@@ -181,7 +181,7 @@ abstract class RebuildPatches : BaseTask() {
         }
 
         if (requiresWrite) {
-            source.writeText(fixedLines.joinToString("\n"), Charsets.UTF_8)
+            source.writeText(fixedLines.joinToString("\n", postfix = "\n"), Charsets.UTF_8)
         }
 
         return fixedLines

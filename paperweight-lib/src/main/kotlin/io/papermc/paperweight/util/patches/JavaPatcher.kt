@@ -6,15 +6,7 @@ import com.github.difflib.patch.Patch
 import com.github.difflib.patch.PatchFailedException
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import kotlin.io.path.copyTo
-import kotlin.io.path.createDirectories
-import kotlin.io.path.name
-import kotlin.io.path.notExists
-import kotlin.io.path.pathString
-import kotlin.io.path.readLines
-import kotlin.io.path.relativeTo
-import kotlin.io.path.walk
-import kotlin.io.path.writeLines
+import kotlin.io.path.*
 
 internal open class JavaPatcher : Patcher {
 
@@ -64,8 +56,8 @@ internal open class JavaPatcher : Patcher {
 
         return try {
             val patchedLines = applyPatch(parsedPatch, javaLines)
-            patched.writeLines(
-                patchedLines,
+            patched.writeText(
+                patchedLines.joinToString("\n", postfix = "\n"),
                 Charsets.UTF_8,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE,

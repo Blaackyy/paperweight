@@ -79,7 +79,7 @@ abstract class SetupVanilla : BaseTask() {
             }
 
         println("Setup git repo...")
-        val vanillaIdent = PersonIdent("Vanilla", "vanilla@papermc.io")
+        val vanillaIdent = PersonIdent("Vanilla", "vanilla@automated.papermc.io")
 
         val git = Git.init()
             .setDirectory(outputPath.toFile())
@@ -106,12 +106,12 @@ abstract class SetupVanilla : BaseTask() {
 
             val macheIdent = PersonIdent("Mache", "mache@automated.papermc.io")
             git.add().addFilepattern(".").call()
-            git.tag().setName("mache").setTagger(macheIdent).setSigned(false).call()
             git.commit()
                 .setMessage("Mache")
                 .setAuthor(macheIdent)
                 .setSign(false)
                 .call()
+            git.tag().setName("mache").setTagger(macheIdent).setSigned(false).call()
 
             if (result is PatchFailure) {
                 result.failures
@@ -147,12 +147,12 @@ abstract class SetupVanilla : BaseTask() {
 
             val macheIdent = PersonIdent("ATs", "ats@automated.papermc.io")
             git.add().addFilepattern(".").call()
-            git.tag().setName("ATs").setTagger(macheIdent).setSigned(false).call()
             git.commit()
                 .setMessage("ATs")
                 .setAuthor(macheIdent)
                 .setSign(false)
                 .call()
+            git.tag().setName("ATs").setTagger(macheIdent).setSigned(false).call()
         }
 
         git.close()
