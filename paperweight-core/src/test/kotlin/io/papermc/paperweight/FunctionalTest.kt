@@ -8,6 +8,7 @@ import kotlin.io.path.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.io.CleanupMode
 import org.junit.jupiter.api.io.TempDir
 
@@ -20,8 +21,20 @@ class FunctionalTest {
 
         val result = tempDir.copyProject("functional_test")
             .gradleRunner()
-            .withArguments("applyPatches", "dependencies", ":test-server:dependencies",  "--stacktrace" , "--scan")
-            .withDebug(true)
+            .withArguments("applyPatches", "dependencies", ":test-server:dependencies",  "--stacktrace", "-Dfake=true")
+            //.withDebug(true)
+            .build()
+
+        assertEquals(result.task(":applyPatches")?.outcome, TaskOutcome.SUCCESS)
+    }
+
+    @Test
+    @Disabled
+    fun `test full vanilla project`(@TempDir(cleanup = CleanupMode.ON_SUCCESS) tempDir: Path) {
+        val result = tempDir.copyProject("functional_test")
+            .gradleRunner()
+            .withArguments("applyPatches", "-Dfake=false")
+            //.withDebug(true)
             .build()
 
         assertEquals(result.task(":applyPatches")?.outcome, TaskOutcome.SUCCESS)

@@ -65,7 +65,7 @@ open class SoftSpoonTasks(
     val collectAccessTransform by tasks.registering(CollectATsFromPatches::class) {
         group = "mache"
 
-        patchDir.set(project.layout.projectDirectory.dir("patches/feature"))
+        patchDir.set(project.ext.paper.featurePatchDir)
     }
 
     val mergeCollectedAts by tasks.registering<MergeAccessTransforms> {
@@ -102,7 +102,7 @@ open class SoftSpoonTasks(
 
         input.set(setupMacheSources.flatMap { it.outputDir })
         output.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/java") })
-        patches.set(project.layout.projectDirectory.dir("patches/sources"))
+        patches.set(project.ext.paper.sourcePatchDir)
     }
 
     val applySourcePatchesFuzzy by tasks.registering(ApplyPatchesFuzzy::class) {
@@ -111,7 +111,7 @@ open class SoftSpoonTasks(
 
         input.set(setupMacheSources.flatMap { it.outputDir })
         output.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/java") })
-        patches.set(project.layout.projectDirectory.dir("patches/sources"))
+        patches.set(project.ext.paper.sourcePatchDir)
     }
 
     val applyResourcePatches by tasks.registering(ApplyPatches::class) {
@@ -120,7 +120,7 @@ open class SoftSpoonTasks(
 
         input.set(setupMacheResources.flatMap { it.outputDir })
         output.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/resources") })
-        patches.set(project.layout.projectDirectory.dir("patches/resources"))
+        patches.set(project.ext.paper.resourcePatchDir)
     }
 
     val applyPatches by tasks.registering(Task::class) {
@@ -139,7 +139,7 @@ open class SoftSpoonTasks(
 
         base.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
         input.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/java") })
-        patches.set(project.layout.projectDirectory.dir("patches/sources"))
+        patches.set(project.ext.paper.sourcePatchDir)
     }
 
     val rebuildResourcePatches by tasks.registering(RebuildPatches::class) {
@@ -148,7 +148,7 @@ open class SoftSpoonTasks(
 
         base.set(layout.cache.resolve(BASE_PROJECT).resolve("resources"))
         input.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/resources") })
-        patches.set(project.layout.projectDirectory.dir("patches/resources"))
+        patches.set(project.ext.paper.resourcePatchDir)
     }
 
     val rebuildPatches by tasks.registering(Task::class) {
