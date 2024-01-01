@@ -1,3 +1,25 @@
+/*
+ * paperweight is a Gradle plugin for the PaperMC project.
+ *
+ * Copyright (c) 2023 Kyle Wood (DenWav)
+ *                    Contributors
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 only, no later versions.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
+ */
+
 package io.papermc.paperweight.tasks
 
 import io.papermc.paperweight.util.*
@@ -13,17 +35,14 @@ abstract class MacheTask : DefaultTask() {
     @get:Classpath
     abstract val mache: ConfigurableFileCollection
 
-
     @TaskAction
     fun run() {
-
         val meta = getMacheMeta()
         println("loaded meta: $meta")
-
     }
 
     private fun getMacheMeta(): MacheMeta {
-        val metaJson = mutableListOf("");
+        val metaJson = mutableListOf("")
         mache.singleFile.toPath().openZip().use { zip ->
             metaJson.addAll(zip.getPath("/mache.json").readLines())
         }
@@ -32,10 +51,10 @@ abstract class MacheTask : DefaultTask() {
     }
 
     private fun extractVanillaJar() {
-        //val jar = downloadedJar.convertToPath()
-        //val out = serverJar.convertToPath().ensureClean()
+        // val jar = downloadedJar.convertToPath()
+        // val out = serverJar.convertToPath().ensureClean()
 //
-        //jar.useZip { root ->
+        // jar.useZip { root ->
         //    val metaInf = root.resolve("META-INF")
         //    val versionsList = metaInf.resolve("versions.list")
         //    if (versionsList.notExists()) {
@@ -59,8 +78,6 @@ abstract class MacheTask : DefaultTask() {
         //    }
 //
         //    serverJarInJar.copyTo(out)
-        //}
+        // }
     }
 }
-
-

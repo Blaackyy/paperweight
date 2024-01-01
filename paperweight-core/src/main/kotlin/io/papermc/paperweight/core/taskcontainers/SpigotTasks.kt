@@ -54,7 +54,7 @@ open class SpigotTasks(
         classMappings.set(addAdditionalSpigotMappings.flatMap { it.outputClassSrg })
 
         // todo hypo update breaks generate mappings, hardcode for now
-        //sourceMappings.set(generateMappings.flatMap { it.outputMappings })
+        // sourceMappings.set(generateMappings.flatMap { it.outputMappings })
         sourceMappings.set(Path.of("D:\\IntellijProjects\\PaperClean\\.gradle\\caches\\paperweight\\mappings\\official-mojang+yarn.tiny"))
 
         outputMappings.set(cache.resolve(SPIGOT_MOJANG_YARN_MAPPINGS))

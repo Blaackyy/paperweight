@@ -32,6 +32,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.apache.http.HttpHost
 import org.apache.http.HttpStatus
 import org.apache.http.client.config.CookieSpecs
@@ -41,13 +43,11 @@ import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.utils.DateUtils
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import org.gradle.api.file.DirectoryProperty
 
 abstract class DownloadService : BuildService<DownloadService.Params>, AutoCloseable {
 

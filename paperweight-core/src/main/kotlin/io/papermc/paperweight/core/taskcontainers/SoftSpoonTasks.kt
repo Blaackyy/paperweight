@@ -1,3 +1,25 @@
+/*
+ * paperweight is a Gradle plugin for the PaperMC project.
+ *
+ * Copyright (c) 2023 Kyle Wood (DenWav)
+ *                    Contributors
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 only, no later versions.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
+ */
+
 package io.papermc.paperweight.core.taskcontainers
 
 import io.papermc.paperweight.core.ext
@@ -16,12 +38,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.*
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskContainer
-import org.gradle.kotlin.dsl.*
 import org.gradle.api.Task
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.TaskContainer
+import org.gradle.kotlin.dsl.*
 
 open class SoftSpoonTasks(
     val project: Project,
@@ -180,10 +202,10 @@ open class SoftSpoonTasks(
     val remapCBPatches by tasks.registering(RemapCBPatches::class) {
         group = "patchremap"
         base.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
-        //craftBukkit.set(allTasks.patchCraftBukkit.flatMap { it.outputDir })
+        // craftBukkit.set(allTasks.patchCraftBukkit.flatMap { it.outputDir })
         craftBukkit.set(project.layout.cache.resolve("paperweight/taskCache/patchCraftBukkit.repo"))
         outputPatchDir.set(project.layout.projectDirectory.dir("patches/remapped-cb"))
-        //mappingsFile.set(allTasks.patchMappings.flatMap { it.outputMappings })
+        // mappingsFile.set(allTasks.patchMappings.flatMap { it.outputMappings })
         mappingsFile.set(layout.cache.resolve(SPIGOT_MOJANG_PARCHMENT_MAPPINGS))
     }
 
@@ -258,7 +280,7 @@ open class SoftSpoonTasks(
             }
         }
 
-        this.project.ext.serverProject.get().setupServerProject(libsFile);
+        this.project.ext.serverProject.get().setupServerProject(libsFile)
     }
 
     private fun Project.setupServerProject(libsFile: Path) {

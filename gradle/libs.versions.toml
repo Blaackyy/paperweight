@@ -21,7 +21,8 @@ cadix-lorenz-asm = { module = "org.cadixdev:lorenz-asm", version.ref = "lorenz" 
 cadix-lorenz-proguard = { module = "org.cadixdev:lorenz-io-proguard", version.ref = "lorenz" }
 cadix-atlas = "org.cadixdev:atlas:0.2.1"
 cadix-at = "org.cadixdev:at:0.1.0-rc1"
-cadix-mercury = "org.cadixdev:mercury:0.1.1-paperweight-local-SNAPSHOT"
+# cadix-mercury = "org.cadixdev:mercury:0.1.1-paperweight-local-SNAPSHOT" todo local mods for patch remapping
+cadix-mercury = "org.cadixdev:mercury:0.1.1-paperweight-SNAPSHOT"
 cadix-bombe-jar = "org.cadixdev:bombe-jar:0.4.4"
 
 hypo-model = { module = "dev.denwav.hypo:hypo-model", version.ref = "hypo" }
@@ -43,7 +44,7 @@ diffpatch = "codechicken:DiffPatch:1.5.0.29"
 serialize-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialize" }
 serialize-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialize" }
 
-codebook = "io.papermc.codebook:codebook:1.0.4"
+codebook = "io.papermc.codebook:codebook:1.0.8"
 
 restamp = "io.papermc.restamp:restamp:1.0.0"
 

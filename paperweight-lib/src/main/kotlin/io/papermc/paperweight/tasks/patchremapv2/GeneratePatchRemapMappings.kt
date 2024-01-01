@@ -1,3 +1,25 @@
+/*
+ * paperweight is a Gradle plugin for the PaperMC project.
+ *
+ * Copyright (c) 2023 Kyle Wood (DenWav)
+ *                    Contributors
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation;
+ * version 2.1 only, no later versions.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
+ * USA
+ */
+
 package io.papermc.paperweight.tasks.patchremapv2
 
 import com.google.gson.GsonBuilder
@@ -71,8 +93,14 @@ abstract class GeneratePatchRemapMappings : BaseTask() {
         try {
             ctx = HypoContext.builder()
                 .withProvider(AsmClassDataProvider.of(ClassProviderRoot.fromJar(serverJar.convertToPath())))
-                .withContextProvider(AsmClassDataProvider.of(ClassProviderRoot.fromJars(*minecraftClasspath.files.map { it.toPath() }
-                    .toTypedArray())))
+                .withContextProvider(
+                    AsmClassDataProvider.of(
+                        ClassProviderRoot.fromJars(
+                            *minecraftClasspath.files.map { it.toPath() }
+                                .toTypedArray()
+                        )
+                    )
+                )
                 .withContextProvider(AsmClassDataProvider.of(ClassProviderRoot.ofJdk()))
                 .build()
         } catch (e: IOException) {
@@ -140,7 +168,7 @@ abstract class GeneratePatchRemapMappings : BaseTask() {
         mojangMappings.topLevelClassMappings.filterNot { it.obfuscatedName.endsWith("package-info") }.forEach { mojangClass ->
             val spigotClass = spigotMappings.getTopLevelClassMapping(mojangClass.deobfuscatedName).orElse(null)
             if (spigotClass == null) {
-                //println("cant find spigot class for ${mojangClass.deobfuscatedName} - ${mojangClass.obfuscatedName}")
+                // println("cant find spigot class for ${mojangClass.deobfuscatedName} - ${mojangClass.obfuscatedName}")
                 return@forEach
             }
             val parchmentClass = parchmentMappings.getTopLevelClassMapping(mojangClass.obfuscatedName).orElse(null)
@@ -167,7 +195,7 @@ abstract class GeneratePatchRemapMappings : BaseTask() {
         mojangClass.innerClassMappings.forEach { innerMojangClass ->
             val innerSpigotClass = spigotClass.getInnerClassMapping(innerMojangClass.deobfuscatedName).orElse(null)
             if (innerSpigotClass == null) {
-                //println("cant find inner spigot class for ${innerMojangClass.deobfuscatedName} - ${innerMojangClass.obfuscatedName}")
+                // println("cant find inner spigot class for ${innerMojangClass.deobfuscatedName} - ${innerMojangClass.obfuscatedName}")
                 return@forEach
             }
             val innerParchmentClass = parchmentClass.getInnerClassMapping(innerMojangClass.obfuscatedName).orElse(null)
@@ -192,7 +220,7 @@ abstract class GeneratePatchRemapMappings : BaseTask() {
         mojangClass.fieldMappings.forEach { mojangField ->
             val spigotField = spigotClass.getFieldMapping(mojangField.deobfuscatedName).orElse(null)
             if (spigotField == null) {
-                //println("cant find spigot field for ${mojangField.deobfuscatedName} - ${mojangField.obfuscatedName}")
+                // println("cant find spigot field for ${mojangField.deobfuscatedName} - ${mojangField.obfuscatedName}")
                 return@forEach
             }
             val resultField = resultClass.createFieldMapping(spigotField.deobfuscatedSignature, mojangField.obfuscatedName)
@@ -202,12 +230,12 @@ abstract class GeneratePatchRemapMappings : BaseTask() {
         mojangClass.methodMappings.forEach { mojangMethod ->
             val spigotMethod = spigotClass.getMethodMapping(mojangMethod.deobfuscatedName, mojangMethod.deobfuscatedDescriptor).orElse(null)
             if (spigotMethod == null) {
-                //println("cant find spigot method for ${mojangMethod.deobfuscatedName} - ${mojangMethod.obfuscatedName}")
+                // println("cant find spigot method for ${mojangMethod.deobfuscatedName} - ${mojangMethod.obfuscatedName}")
                 return@forEach
             }
             val parchmentMethod = parchmentClass.getMethodMapping(mojangMethod.obfuscatedName, mojangMethod.obfuscatedDescriptor).orElse(null)
             if (parchmentMethod == null) {
-                //println("cant find parchmentMethod for ${mojangMethod.deobfuscatedName} - ${mojangMethod.obfuscatedName}")
+                // println("cant find parchmentMethod for ${mojangMethod.deobfuscatedName} - ${mojangMethod.obfuscatedName}")
                 return@forEach
             }
             val resultMethod = resultClass.createMethodMapping(spigotMethod.deobfuscatedName, spigotMethod.deobfuscatedDescriptor)
@@ -238,4 +266,3 @@ abstract class GeneratePatchRemapMappings : BaseTask() {
         return mappings
     }
 }
-

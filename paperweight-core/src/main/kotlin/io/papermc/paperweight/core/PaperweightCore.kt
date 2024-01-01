@@ -128,25 +128,25 @@ class PaperweightCore : Plugin<Project> {
             println("SoftSpoon: ${ext.softSpoon.get()}")
 
             target.repositories {
-               if (!ext.softSpoon.get()) {
-                   maven(ext.paramMappingsRepo) {
-                       name = PARAM_MAPPINGS_REPO_NAME
-                       content { onlyForConfigurations(PARAM_MAPPINGS_CONFIG) }
-                   }
-                   maven(ext.remapRepo) {
-                       name = REMAPPER_REPO_NAME
-                       content { onlyForConfigurations(REMAPPER_CONFIG) }
-                   }
-                   maven(ext.decompileRepo) {
-                       name = DECOMPILER_REPO_NAME
-                       content { onlyForConfigurations(DECOMPILER_CONFIG) }
-                   }
-               } else {
-                   maven(ext.macheRepo) {
-                       name = MACHE_REPO_NAME
-                       content { onlyForConfigurations(MACHE_CONFIG) }
-                   }
-               }
+                if (!ext.softSpoon.get()) {
+                    maven(ext.paramMappingsRepo) {
+                        name = PARAM_MAPPINGS_REPO_NAME
+                        content { onlyForConfigurations(PARAM_MAPPINGS_CONFIG) }
+                    }
+                    maven(ext.remapRepo) {
+                        name = REMAPPER_REPO_NAME
+                        content { onlyForConfigurations(REMAPPER_CONFIG) }
+                    }
+                    maven(ext.decompileRepo) {
+                        name = DECOMPILER_REPO_NAME
+                        content { onlyForConfigurations(DECOMPILER_CONFIG) }
+                    }
+                } else {
+                    maven(ext.macheRepo) {
+                        name = MACHE_REPO_NAME
+                        content { onlyForConfigurations(MACHE_CONFIG) }
+                    }
+                }
             }
 
             if (ext.softSpoon.get()) {
