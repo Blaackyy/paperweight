@@ -66,7 +66,7 @@ abstract class ApplyPatches : BaseTask() {
 
     open fun setup() {
         output.convertToPath().ensureClean()
-        Git.cloneRepository().setBranch("main").setURI("file://" + input.convertToPath().toString()).setDirectory(output.convertToPath().toFile())
+        Git.cloneRepository().setBranch("main").setRemote("mache").setURI("file://" + input.convertToPath().toString()).setDirectory(output.convertToPath().toFile())
             .call().close()
     }
 
