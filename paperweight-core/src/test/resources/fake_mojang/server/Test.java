@@ -10,4 +10,8 @@ public class Test {
     public String getTest() {
         return test;
     }
+
+    public String getTest2() {
+        return test + "2";
+    }
 }

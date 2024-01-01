@@ -1,7 +1,6 @@
 package io.papermc.paperweight.tasks.softspoon
 
 import atFromString
-import atToString
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
 import io.papermc.paperweight.tasks.*
@@ -10,30 +9,17 @@ import io.papermc.restamp.Restamp
 import io.papermc.restamp.RestampContextConfiguration
 import io.papermc.restamp.RestampInput
 import java.nio.file.Path
-import javax.inject.Inject
 import kotlin.io.path.*
-import org.cadixdev.at.AccessChange
-import org.cadixdev.at.AccessTransform
 import org.cadixdev.at.AccessTransformSet
-import org.cadixdev.at.ModifierChange
 import org.cadixdev.at.io.AccessTransformFormats
 import org.cadixdev.bombe.type.signature.MethodSignature
-import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.CompileClasspath
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.UntrackedTask
+import org.gradle.api.tasks.*
 import org.openrewrite.InMemoryExecutionContext
+import writeLF
 
 @UntrackedTask(because = "Always rebuild patches")
 abstract class RebuildPatches : BaseTask() {
@@ -101,9 +87,9 @@ abstract class RebuildPatches : BaseTask() {
         sourceLines = handleATInSource(sourceLines, ats, className, source)
         decompLines = handleATInBase(decompLines, ats, decompRoot, decomp)
 
-        if (!ats.classes.isEmpty()) {
+        if (ats.classes.isNotEmpty()) {
             oldAts.merge(ats)
-            AccessTransformFormats.FML.write(atFileOut.convertToPath(), oldAts)
+            AccessTransformFormats.FML.writeLF(atFileOut.convertToPath(), oldAts)
         }
 
         val patch = DiffUtils.diff(decompLines, sourceLines)

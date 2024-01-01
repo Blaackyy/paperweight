@@ -8,7 +8,6 @@ import kotlin.io.path.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.gradle.testkit.runner.TaskOutcome
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.io.CleanupMode
 import org.junit.jupiter.api.io.TempDir
 
@@ -19,13 +18,38 @@ class FunctionalTest {
         setupMache("fake_mache", tempDir.resolve("mache.zip"))
         setupMojang("fake_mojang", tempDir.resolve("fake_mojang"))
 
-        val result = tempDir.copyProject("functional_test")
-            .gradleRunner()
+        val gradleRunner = tempDir.copyProject("functional_test").gradleRunner()
+
+        // appP -> works
+        val appP = gradleRunner
             .withArguments("applyPatches", "dependencies", ":test-server:dependencies",  "--stacktrace", "-Dfake=true")
             //.withDebug(true)
             .build()
 
-        assertEquals(result.task(":applyPatches")?.outcome, TaskOutcome.SUCCESS)
+        assertEquals(appP.task(":applyPatches")?.outcome, TaskOutcome.SUCCESS)
+
+        // clean rebuild rebP -> changes nothing
+        val rebP = gradleRunner
+            .withArguments("rebuildPatches", "--stacktrace", "-Dfake=true")
+            .withDebug(debug)
+            .build()
+
+        assertEquals(rebP.task(":rebuildPatches")?.outcome, TaskOutcome.SUCCESS)
+        assertEquals(testResource.resolve("fake-patches/sources/Test.java.patch").readText(), tempDir.resolve("fake-patches/sources/Test.java.patch").readText())
+
+        // add AT to source -> patch and AT file is updated
+        val sourceFile = tempDir.resolve("test-server/src/vanilla/java/Test.java")
+        val replacedContent = sourceFile.readText().replace("\"2\";", "\"2\"; // Woo").replace("public String getTest2() {", "private final String getTest2() {// Paper-AT: private+f getTest2()Ljava/lang/String;")
+        sourceFile.writeText(replacedContent)
+
+        val rebP2 = gradleRunner
+            .withArguments("rebuildPatches", "--stacktrace", "-Dfake=true")
+            .withDebug(debug)
+            .build()
+
+        assertEquals(rebP2.task(":rebuildPatches")?.outcome, TaskOutcome.SUCCESS)
+        assertEquals(testResource.resolve("fake-patches/expected/Test.java.patch").readText(), tempDir.resolve("fake-patches/sources/Test.java.patch").readText())
+        assertEquals(testResource.resolve("build-data/expected.at").readText(), tempDir.resolve("build-data/fake.at").readText())
     }
 
     @Test

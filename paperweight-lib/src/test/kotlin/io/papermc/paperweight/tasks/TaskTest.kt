@@ -5,10 +5,10 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.*
-import kotlin.test.assertEquals
 import org.eclipse.jgit.api.Git
 import org.gradle.testfixtures.ProjectBuilder
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 
 open class TaskTest {
 
@@ -37,7 +37,7 @@ open class TaskTest {
         val expectedFiles = expectedOutput.walk().filter { Files.isRegularFile(it) }.filter { !it.toString().contains(".git") }.toList()
         val actualFiles = actualOutput.walk().filter { Files.isRegularFile(it) }.filter { !it.toString().contains(".git") }.toList()
 
-        Assertions.assertEquals(expectedFiles.size, actualFiles.size, "Expected $expectedFiles files, got $actualFiles")
+        assertEquals(expectedFiles.size, actualFiles.size, "Expected $expectedFiles files, got $actualFiles")
 
         expectedFiles.forEach { expectedFile ->
             val actualFile = actualOutput.resolve(expectedOutput.relativize(expectedFile))
@@ -59,7 +59,7 @@ open class TaskTest {
         val expectedZip = expectedOutput.openZip()
         val expectedFiles = expectedZip.walk().filter { Files.isRegularFile(it) }.toList()
 
-        Assertions.assertEquals(expectedFiles.size, actualFiles.size, "Expected $expectedFiles files, got $actualFiles")
+        assertEquals(expectedFiles.size, actualFiles.size, "Expected $expectedFiles files, got $actualFiles")
 
         expectedFiles.forEach { expectedFile ->
             val actualFile = actualZip.getPath(expectedFile.toString())
@@ -76,9 +76,8 @@ open class TaskTest {
     }
 
     private fun compareFile(actual: Path, expected: Path) {
-        Assertions.assertTrue(actual.exists(), "Expected file $actual doesn't exist")
-        // TODO I really dont want to ignore CRLF/LF differences here :/
-        Assertions.assertEquals(expected.readText().replace("\r\n", "\n"), actual.readText().replace("\r\n", "\n"), "File $actual doesn't match expected")
+        assertTrue(actual.exists(), "Expected file $actual doesn't exist")
+        assertEquals(expected.readText(), actual.readText(), "File $actual doesn't match expected")
     }
 
     fun setupGitRepo(directory: File, mainBranch: String) {
@@ -104,8 +103,8 @@ open class TaskTest {
     }
 
     fun createJar(tempDir: Path, testResource: Path, name: String): Path {
-        val sourceFile = tempDir.resolve(name + ".java")
-        testResource.resolve(name + ".java").copyTo(sourceFile)
+        val sourceFile = tempDir.resolve("$name.java")
+        testResource.resolve("$name.java").copyTo(sourceFile)
 
         // run javac on the file
         ProcessBuilder()
@@ -118,17 +117,17 @@ open class TaskTest {
         // create jar
         ProcessBuilder()
             .directory(tempDir.toFile())
-            .command("jar", "-cf", name + ".jar", name + ".class")
+            .command("jar", "-cf", "$name.jar", "$name.class")
             .redirectErrorStream(true)
             .start()
             .waitFor()
 
-        return tempDir.resolve(name + ".jar")
+        return tempDir.resolve("$name.jar")
     }
 
     fun compareJar(tempDir: Path, testResource: Path, fileName: String, className: String) {
-        val outputJar = tempDir.resolve(fileName + ".jar")
-        val expectedOutputFile = testResource.resolve(fileName + ".javap")
+        val outputJar = tempDir.resolve("$fileName.jar")
+        val expectedOutputFile = testResource.resolve("$fileName.javap")
 
         // unpack jar
         ProcessBuilder()
@@ -141,7 +140,7 @@ open class TaskTest {
         // disassemble class
         val process = ProcessBuilder()
             .directory(tempDir.toFile())
-            .command("javap", "-p", "-c", className + ".class")
+            .command("javap", "-p", "-c", "$className.class")
             .redirectErrorStream(true)
             .start()
 

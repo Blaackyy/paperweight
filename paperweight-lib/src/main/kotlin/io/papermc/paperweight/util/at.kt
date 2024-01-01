@@ -1,8 +1,15 @@
+import java.io.BufferedWriter
+import java.io.StringWriter
+import java.nio.file.Path
+import kotlin.io.path.*
 import org.cadixdev.at.AccessChange
 import org.cadixdev.at.AccessTransform
+import org.cadixdev.at.AccessTransformSet
 import org.cadixdev.at.ModifierChange
+import org.cadixdev.at.io.AccessTransformFormat
+import org.cadixdev.at.io.AccessTransformFormats
 
-public fun atFromString(input: String): AccessTransform {
+fun atFromString(input: String): AccessTransform {
     var last = input.length - 1
 
     val final: ModifierChange
@@ -26,7 +33,7 @@ public fun atFromString(input: String): AccessTransform {
     return AccessTransform.of(access, final)
 }
 
-public fun atToString(at: AccessTransform): String {
+fun atToString(at: AccessTransform): String {
     val access = when (at.access) {
         AccessChange.PRIVATE -> "private"
         AccessChange.PROTECTED -> "protected"
@@ -39,4 +46,12 @@ public fun atToString(at: AccessTransform): String {
         else -> ""
     }
     return access + final
+}
+
+fun AccessTransformFormat.writeLF(path: Path, at: AccessTransformSet) {
+    val stringWriter = StringWriter()
+    val writer = BufferedWriter(stringWriter)
+    AccessTransformFormats.FML.write(writer, at)
+    writer.close()
+    path.writeText(stringWriter.toString().replace("\r\n", "\n"), Charsets.UTF_8)
 }
