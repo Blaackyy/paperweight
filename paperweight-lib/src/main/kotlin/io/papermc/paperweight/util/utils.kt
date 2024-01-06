@@ -189,8 +189,14 @@ fun Any.convertToPath(): Path {
     }
 }
 
-internal fun Path.ensureClean(): Path {
-    deleteRecursively()
+fun Path.ensureClean(): Path {
+    try {
+        deleteRecursively()
+    } catch (e: Exception) {
+        println("Failed to delete $this: ${e.javaClass.name}: ${e.message}")
+        e.suppressedExceptions.forEach { println("Suppressed exception: $it") }
+        throw PaperweightException("Failed to delete $this", e)
+    }
     parent.createDirectories()
     return this
 }

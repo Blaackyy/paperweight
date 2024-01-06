@@ -30,7 +30,7 @@ import org.gradle.api.tasks.UntrackedTask
 import org.gradle.api.tasks.options.Option
 
 @UntrackedTask(because = "Always apply patches")
-abstract class ApplyPatchesFuzzy : ApplyPatches() {
+abstract class ApplyFilePatchesFuzzy : ApplyFilePatches() {
 
     @get:Input
     @get:Option(

@@ -28,9 +28,10 @@ import io.papermc.paperweight.tasks.mache.*
 import io.papermc.paperweight.tasks.mache.RemapJar
 import io.papermc.paperweight.tasks.patchremapv2.GeneratePatchRemapMappings
 import io.papermc.paperweight.tasks.patchremapv2.RemapCBPatches
-import io.papermc.paperweight.tasks.softspoon.ApplyPatches
-import io.papermc.paperweight.tasks.softspoon.ApplyPatchesFuzzy
-import io.papermc.paperweight.tasks.softspoon.RebuildPatches
+import io.papermc.paperweight.tasks.softspoon.ApplyFeaturePatches
+import io.papermc.paperweight.tasks.softspoon.ApplyFilePatches
+import io.papermc.paperweight.tasks.softspoon.ApplyFilePatchesFuzzy
+import io.papermc.paperweight.tasks.softspoon.RebuildFilePatches
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.*
 import io.papermc.paperweight.util.data.mache.*
@@ -118,7 +119,7 @@ open class SoftSpoonTasks(
         outputDir.set(layout.cache.resolve(BASE_PROJECT).resolve("resources"))
     }
 
-    val applySourcePatches by tasks.registering(ApplyPatches::class) {
+    val applySourcePatches by tasks.registering(ApplyFilePatches::class) {
         group = "softspoon"
         description = "Applies patches to the vanilla sources"
 
@@ -127,7 +128,7 @@ open class SoftSpoonTasks(
         patches.set(project.ext.paper.sourcePatchDir)
     }
 
-    val applySourcePatchesFuzzy by tasks.registering(ApplyPatchesFuzzy::class) {
+    val applySourcePatchesFuzzy by tasks.registering(ApplyFilePatchesFuzzy::class) {
         group = "softspoon"
         description = "Applies patches to the vanilla sources"
 
@@ -136,7 +137,7 @@ open class SoftSpoonTasks(
         patches.set(project.ext.paper.sourcePatchDir)
     }
 
-    val applyResourcePatches by tasks.registering(ApplyPatches::class) {
+    val applyResourcePatches by tasks.registering(ApplyFilePatches::class) {
         group = "softspoon"
         description = "Applies patches to the vanilla resources"
 
@@ -145,13 +146,28 @@ open class SoftSpoonTasks(
         patches.set(project.ext.paper.resourcePatchDir)
     }
 
-    val applyPatches by tasks.registering(Task::class) {
+    val applyFilePatches by tasks.registering(Task::class) {
         group = "softspoon"
-        description = "Applies all patches"
+        description = "Applies all file patches"
         dependsOn(applySourcePatches, applyResourcePatches)
     }
 
-    val rebuildSourcePatches by tasks.registering(RebuildPatches::class) {
+    val applyFeaturePatches by tasks.registering(ApplyFeaturePatches::class) {
+        group = "softspoon"
+        description = "Applies all feature patches"
+        dependsOn(applyFilePatches)
+
+        repo.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/java") })
+        patches.set(project.ext.paper.featurePatchDir)
+    }
+
+    val applyPatches by tasks.registering(Task::class) {
+        group = "softspoon"
+        description = "Applies all patches"
+        dependsOn(applyFilePatches, applyFeaturePatches)
+    }
+
+    val rebuildSourcePatches by tasks.registering(RebuildFilePatches::class) {
         group = "softspoon"
         description = "Rebuilds patches to the vanilla sources"
 
@@ -164,7 +180,7 @@ open class SoftSpoonTasks(
         patches.set(project.ext.paper.sourcePatchDir)
     }
 
-    val rebuildResourcePatches by tasks.registering(RebuildPatches::class) {
+    val rebuildResourcePatches by tasks.registering(RebuildFilePatches::class) {
         group = "softspoon"
         description = "Rebuilds patches to the vanilla resources"
 
@@ -173,10 +189,26 @@ open class SoftSpoonTasks(
         patches.set(project.ext.paper.resourcePatchDir)
     }
 
+    val rebuildFilePatches by tasks.registering(Task::class) {
+        group = "softspoon"
+        description = "Rebuilds all file patches"
+        dependsOn(rebuildSourcePatches, rebuildResourcePatches)
+    }
+
+    val rebuildFeaturePatches by tasks.registering(RebuildGitPatches::class) {
+        group = "softspoon"
+        description = "Rebuilds all feature patches"
+        dependsOn(rebuildFilePatches)
+
+        inputDir.set(project.ext.serverProject.map { it.layout.projectDirectory.dir("src/vanilla/java") })
+        patchDir.set(project.ext.paper.featurePatchDir)
+        baseRef.set("file")
+    }
+
     val rebuildPatches by tasks.registering(Task::class) {
         group = "softspoon"
-        description = "Rebuilds all patches"
-        dependsOn(rebuildSourcePatches, rebuildResourcePatches)
+        description = "Rebuilds all file patches"
+        dependsOn(rebuildFilePatches, rebuildFeaturePatches)
     }
 
     // patch remap stuff

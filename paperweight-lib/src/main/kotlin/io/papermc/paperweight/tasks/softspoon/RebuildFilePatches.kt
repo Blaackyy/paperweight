@@ -44,7 +44,7 @@ import org.openrewrite.InMemoryExecutionContext
 import writeLF
 
 @UntrackedTask(because = "Always rebuild patches")
-abstract class RebuildPatches : BaseTask() {
+abstract class RebuildFilePatches : BaseTask() {
 
     @get:InputDirectory
     abstract val input: DirectoryProperty

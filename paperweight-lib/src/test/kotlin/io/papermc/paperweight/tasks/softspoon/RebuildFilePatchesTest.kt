@@ -29,33 +29,38 @@ import kotlin.test.Test
 import org.gradle.kotlin.dsl.*
 import org.junit.jupiter.api.io.TempDir
 
-class ApplyPatchesTest : TaskTest() {
-    private lateinit var task: ApplyPatches
+class RebuildFilePatchesTest : TaskTest() {
+    private lateinit var task: RebuildFilePatches
 
     @BeforeTest
     fun setup() {
         val project = setupProject()
-        task = project.tasks.register("applyPatches", ApplyPatches::class).get()
+        task = project.tasks.register("rebuildPatches", RebuildFilePatches::class).get()
     }
 
     @Test
-    fun `should apply patches`(@TempDir tempDir: Path) {
-        val testResource = Path.of("src/test/resources/apply_patches")
+    fun `should rebuild patches`(@TempDir tempDir: Path) {
+        val testResource = Path.of("src/test/resources/rebuild_patches")
         val testInput = testResource.resolve("input")
 
-        val input = setupDir(tempDir, testInput, "base").toFile()
-        val output = tempDir.resolve("source").toFile()
-        val patches = testInput.resolve("patches").toFile()
+        val source = setupDir(tempDir, testInput, "source").toFile()
+        val base = setupDir(tempDir, testInput, "base").toFile()
+        val patches = tempDir.resolve("patches").toFile()
+        val atFile = testInput.resolve("ats.at").toFile()
+        val atFileOut = tempDir.resolve("ats.at").toFile()
 
-        setupGitRepo(input, "main")
-
-        task.input.set(input)
-        task.output.set(output)
+        task.input.set(source)
+        task.base.set(base)
         task.patches.set(patches)
+        task.atFile.set(atFile)
+        task.atFileOut.set(atFileOut)
 
         task.run()
 
         val testOutput = testResource.resolve("output")
+        compareDir(tempDir, testOutput, "base")
         compareDir(tempDir, testOutput, "source")
+        compareDir(tempDir, testOutput, "patches")
+        compareFile(tempDir, testOutput, "ats.at")
     }
 }

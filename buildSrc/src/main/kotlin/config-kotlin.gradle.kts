@@ -8,7 +8,7 @@ plugins {
 }
 
 java {
-    //withSourcesJar() // TODO
+    withSourcesJar()
 }
 
 kotlin {
@@ -18,7 +18,7 @@ kotlin {
 }
 
 repositories {
-    mavenLocal()
+    mavenLocal() // TODO remove again
     maven("https://repo.papermc.io/repository/maven-snapshots/") {
         mavenContent {
             includeModule("org.cadixdev", "mercury")

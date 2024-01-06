@@ -27,41 +27,35 @@ import java.nio.file.Path
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.gradle.kotlin.dsl.*
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.io.TempDir
 
-class RebuildPatchesTest : TaskTest() {
-    private lateinit var task: RebuildPatches
+class ApplyFilePatchesTest : TaskTest() {
+    private lateinit var task: ApplyFilePatches
 
     @BeforeTest
     fun setup() {
         val project = setupProject()
-        task = project.tasks.register("rebuildPatches", RebuildPatches::class).get()
+        task = project.tasks.register("applyPatches", ApplyFilePatches::class).get()
     }
 
     @Test
-    fun `should rebuild patches`(@TempDir tempDir: Path) {
-        val testResource = Path.of("src/test/resources/rebuild_patches")
+    fun `should apply patches`(@TempDir tempDir: Path) {
+        val testResource = Path.of("src/test/resources/apply_patches")
         val testInput = testResource.resolve("input")
 
-        val source = setupDir(tempDir, testInput, "source").toFile()
-        val base = setupDir(tempDir, testInput, "base").toFile()
-        val patches = tempDir.resolve("patches").toFile()
-        val atFile = testInput.resolve("ats.at").toFile()
-        val atFileOut = tempDir.resolve("ats.at").toFile()
+        val input = setupDir(tempDir, testInput, "base").toFile()
+        val output = tempDir.resolve("source").toFile()
+        val patches = testInput.resolve("patches").toFile()
 
-        task.input.set(source)
-        task.base.set(base)
+        setupGitRepo(input, "main")
+
+        task.input.set(input)
+        task.output.set(output)
         task.patches.set(patches)
-        task.atFile.set(atFile)
-        task.atFileOut.set(atFileOut)
 
         task.run()
 
         val testOutput = testResource.resolve("output")
-        compareDir(tempDir, testOutput, "base")
         compareDir(tempDir, testOutput, "source")
-        compareDir(tempDir, testOutput, "patches")
-        compareFile(tempDir, testOutput, "ats.at")
     }
 }

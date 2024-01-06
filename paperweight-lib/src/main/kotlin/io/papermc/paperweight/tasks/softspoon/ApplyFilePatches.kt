@@ -41,7 +41,7 @@ import org.gradle.api.tasks.UntrackedTask
 import org.gradle.process.ExecOperations
 
 @UntrackedTask(because = "Always apply patches")
-abstract class ApplyPatches : BaseTask() {
+abstract class ApplyFilePatches : BaseTask() {
 
     @get:PathSensitive(PathSensitivity.NONE)
     @get:InputDirectory
@@ -85,6 +85,17 @@ abstract class ApplyPatches : BaseTask() {
     }
 
     open fun setup() {
+        //io.papermc.paperweight.util.Git.checkForGit()
+//
+        //Git(input.convertToPath()).let { git ->
+        //    git("fetch").setupOut().run()
+        //    git("branch", "-f", "mache", "main").runSilently(silenceErr = true)
+        //}
+//
+        //recreateCloneDirectory(output.convertToPath())
+
+
+        // TODO instead of deleting, we can maybe reset back to mache's base commit and then apply the patches?s
         output.convertToPath().ensureClean()
         Git.cloneRepository().setBranch(
             "main"

@@ -30,12 +30,29 @@ import kotlin.io.path.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import org.gradle.testkit.runner.TaskOutcome
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.io.CleanupMode
 import org.junit.jupiter.api.io.TempDir
 
 class FunctionalTest {
 
     val debug = false
+
+    @Disabled
+    @Test
+    fun setupCleanTestRepo() {
+        val projectDir = Path.of("F:\\Projects\\paperweight\\test").ensureClean().createDirectories()
+
+        setupMache("fake_mache", projectDir.resolve("mache.zip"))
+        setupMojang("fake_mojang", projectDir.resolve("fake_mojang"))
+        projectDir.copyProject("functional_test")
+
+        val settings = projectDir.resolve("settings.gradle")
+        val text = settings.readText()
+        settings.writeText(text.replace("// includeBuild '..'", "includeBuild '..'").replace("functional_test", "test"))
+
+        projectDir.resolve("patches").deleteRecursively()
+    }
 
     @Test
     fun `test simple test project`(@TempDir(cleanup = CleanupMode.NEVER) tempDir: Path) {
