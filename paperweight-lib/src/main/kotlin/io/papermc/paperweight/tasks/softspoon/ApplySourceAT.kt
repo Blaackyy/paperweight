@@ -28,11 +28,16 @@ import io.papermc.restamp.Restamp
 import io.papermc.restamp.RestampContextConfiguration
 import io.papermc.restamp.RestampInput
 import java.nio.file.Files
+import javax.inject.Inject
 import kotlin.io.path.*
 import org.cadixdev.at.io.AccessTransformFormats
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
+import org.gradle.kotlin.dsl.*
+import org.gradle.workers.WorkAction
+import org.gradle.workers.WorkParameters
+import org.gradle.workers.WorkerExecutor
 import org.openrewrite.InMemoryExecutionContext
 
 @CacheableTask
@@ -53,19 +58,50 @@ abstract class ApplySourceAT : BaseTask() {
     @get:CompileClasspath
     abstract val minecraftClasspath: ConfigurableFileCollection
 
+    @get:Inject
+    abstract val worker: WorkerExecutor
+
     override fun init() {
         outputJar.convention(defaultOutput())
     }
 
     @TaskAction
     fun run() {
-        val inputZip = inputJar.convertToPath().openZip()
+
+        val queue = worker.processIsolation {
+            forkOptions {
+                maxHeapSize = "2G"
+            }
+        }
 
         val classPath = minecraftClasspath.files.map { it.toPath() }.toMutableList()
         classPath.add(inputJar.convertToPath())
 
+        queue.submit(RestampWorker::class) {
+            minecraftClasspath.from(minecraftClasspath)
+            atFile.set(atFile)
+            inputJar.set(inputJar)
+            outputJar.set(outputJar)
+        }
+    }
+}
+
+abstract class RestampWorker : WorkAction<RestampWorker.Params> {
+    interface Params : WorkParameters {
+        val minecraftClasspath: ConfigurableFileCollection
+        val atFile: RegularFileProperty
+        val inputJar: RegularFileProperty
+        val outputJar: RegularFileProperty
+    }
+
+    override fun execute() {
+        val inputZip = parameters.inputJar.convertToPath().openZip()
+
+        val classPath = parameters.minecraftClasspath.files.map { it.toPath() }.toMutableList()
+        classPath.add(parameters.inputJar.convertToPath())
+
         val configuration = RestampContextConfiguration.builder()
-            .accessTransformers(atFile.convertToPath(), AccessTransformFormats.FML)
+            .accessTransformers(parameters.atFile.convertToPath(), AccessTransformFormats.FML)
             .sourceRoot(inputZip.getPath("/"))
             .sourceFilesFromAccessTransformers()
             .classpath(classPath)
@@ -76,11 +112,17 @@ abstract class ApplySourceAT : BaseTask() {
         val parsedInput = RestampInput.parseFrom(configuration)
         val results = Restamp.run(parsedInput).allResults
 
-        outputJar.convertToPath().writeZip().use { zip ->
+        parameters.outputJar.convertToPath().writeZip().use { zip ->
             val alreadyWritten = mutableSetOf<String>()
             results.forEach { result ->
-                zip.getPath(result.after.sourcePath.toString()).writeText(result.after.printAll())
-                alreadyWritten.add("/" + result.after.sourcePath.toString())
+                if (result.after == null) {
+                    println("Ignoring ${result.before?.sourcePath} because result.after is null?")
+                    return@forEach
+                }
+                result.after?.let {  after ->
+                    zip.getPath(after.sourcePath.toString()).writeText(after.printAll())
+                    alreadyWritten.add("/" + after.sourcePath.toString())
+                }
             }
 
             inputZip.walk().filter { Files.isRegularFile(it) }.filter { !alreadyWritten.contains(it.toString()) }.forEach { file ->
