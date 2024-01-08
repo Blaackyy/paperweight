@@ -35,7 +35,7 @@ object McDev {
 
     fun importMcDev(
         patches: Iterable<Path>,
-        decompJar: Path,
+        decompJar: Path?,
         importsFile: Path?,
         targetDir: Path,
         dataTargetDir: Path? = null,
@@ -44,7 +44,7 @@ object McDev {
     ) {
         val (javaPatchLines, dataPatchLines) = readPatchLines(patches)
 
-        decompJar.openZip().use { zipFile ->
+        decompJar?.openZip()?.use { zipFile ->
             val decompFiles = mutableSetOf<String>()
 
             zipFile.walk().use { stream ->

@@ -98,12 +98,16 @@ open class SoftSpoonTasks(
 
     val setupMacheSources by tasks.registering(SetupVanilla::class) {
         group = "mache"
-        description = "Setup vanilla source dir (apllying mache patches and paper ATs)."
+        description = "Setup vanilla source dir (applying mache patches and paper ATs)."
 
         mache.from(project.configurations.named(MACHE_CONFIG))
-        patches.set(layout.cache.resolve(PATCHES_FOLDER)) // TODO extract mache
+        machePatches.set(layout.cache.resolve(PATCHES_FOLDER))
         ats.set(mergeCollectedAts.flatMap { it.outputFile })
         minecraftClasspath.from(macheMinecraft)
+
+        libraries.from(allTasks.downloadPaperLibrariesSources.flatMap { it.outputDir }, allTasks.downloadMcLibrariesSources.flatMap { it.outputDir })
+        paperPatches.from(project.ext.paper.sourcePatchDir, project.ext.paper.featurePatchDir)
+        devImports.set(project.ext.paper.devImports.fileExists(project))
 
         inputFile.set(macheDecompileJar.flatMap { it.outputJar })
         predicate.set { Files.isRegularFile(it) && it.toString().endsWith(".java") }

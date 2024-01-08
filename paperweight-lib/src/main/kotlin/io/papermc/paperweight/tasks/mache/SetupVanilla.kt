@@ -56,12 +56,24 @@ abstract class SetupVanilla : BaseTask() {
     abstract val outputDir: DirectoryProperty
 
     @get:Internal
-    abstract val patches: DirectoryProperty
+    abstract val machePatches: DirectoryProperty
 
     @get:Optional
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val ats: RegularFileProperty
+
+    @get:Optional
+    @get:InputFiles
+    abstract val libraries: ConfigurableFileCollection
+
+    @get:Optional
+    @get:InputFiles
+    abstract val paperPatches: ConfigurableFileCollection
+
+    @get:Optional
+    @get:InputFile
+    abstract val devImports: RegularFileProperty
 
     @get:Optional
     @get:CompileClasspath
@@ -115,16 +127,16 @@ abstract class SetupVanilla : BaseTask() {
             .call()
         git.tag().setName("vanilla").setTagger(vanillaIdent).setSigned(false).call()
 
-        if (patches.isPresent()) {
+        if (machePatches.isPresent) {
             // prepare for patches for patching
-            val patchesFolder = patches.convertToPath().ensureClean()
+            val patchesFolder = machePatches.convertToPath().ensureClean()
 
             mache.singleFile.toPath().openZip().use { zip ->
                 zip.getPath("patches").copyRecursivelyTo(patchesFolder)
             }
 
             println("Applying mache patches...")
-            val result = createPatcher().applyPatches(outputPath, patches.convertToPath(), outputPath, outputPath)
+            val result = createPatcher().applyPatches(outputPath, machePatches.convertToPath(), outputPath, outputPath)
 
             val macheIdent = PersonIdent("Mache", "mache@automated.papermc.io")
             git.add().addFilepattern(".").call()
@@ -137,14 +149,14 @@ abstract class SetupVanilla : BaseTask() {
 
             if (result is PatchFailure) {
                 result.failures
-                    .map { "Patch failed: ${it.patch.relativeTo(patches.get().path)}: ${it.details}" }
+                    .map { "Patch failed: ${it.patch.relativeTo(machePatches.get().path)}: ${it.details}" }
                     .forEach { logger.error(it) }
                 git.close()
                 throw Exception("Failed to apply ${result.failures.size} patches")
             }
         }
 
-        if (ats.isPresent()) {
+        if (ats.isPresent) {
             val classPath = minecraftClasspath.files.map { it.toPath() }.toMutableList()
             classPath.add(outputPath)
 
@@ -163,7 +175,7 @@ abstract class SetupVanilla : BaseTask() {
 
             results.forEach { result ->
                 if (result.after != null) {
-                    outputPath.resolve(result.after.sourcePath).writeText(result.after.printAll())
+                    outputPath.resolve(result.after!!.sourcePath).writeText(result.after!!.printAll())
                 }
             }
 
@@ -175,6 +187,20 @@ abstract class SetupVanilla : BaseTask() {
                 .setSign(false)
                 .call()
             git.tag().setName("ATs").setTagger(macheIdent).setSigned(false).call()
+        }
+
+        if (!libraries.isEmpty && !paperPatches.isEmpty) {
+            val patches = paperPatches.files.flatMap { it.toPath().listDirectoryEntries("*.patch") }
+            McDev.importMcDev(patches, null, devImports.convertToPath(), outputPath, null, libraries.files.map { it.toPath() })
+
+            val macheIdent = PersonIdent("Imports", "imports@automated.papermc.io")
+            git.add().addFilepattern(".").call()
+            git.commit()
+                .setMessage("Imports")
+                .setAuthor(macheIdent)
+                .setSign(false)
+                .call()
+            git.tag().setName("Imports").setTagger(macheIdent).setSigned(false).call()
         }
 
         git.close()
