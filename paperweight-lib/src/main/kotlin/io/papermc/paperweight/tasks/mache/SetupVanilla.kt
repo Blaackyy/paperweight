@@ -191,7 +191,7 @@ abstract class SetupVanilla : BaseTask() {
 
         if (!libraries.isEmpty && !paperPatches.isEmpty) {
             val patches = paperPatches.files.flatMap { it.toPath().listDirectoryEntries("*.patch") }
-            McDev.importMcDev(patches, null, devImports.convertToPath(), outputPath, null, libraries.files.map { it.toPath() })
+            McDev.importMcDev(patches, null, devImports.convertToPath(), outputPath, null, libraries.files.map { it.toPath() }, true, "")
 
             val macheIdent = PersonIdent("Imports", "imports@automated.papermc.io")
             git.add().addFilepattern(".").call()
