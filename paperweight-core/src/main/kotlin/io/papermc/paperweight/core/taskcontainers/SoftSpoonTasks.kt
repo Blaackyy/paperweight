@@ -254,6 +254,7 @@ open class SoftSpoonTasks(
 
         // setup repos
         this.project.repositories {
+            println("setup repos for ${project.name}")
             for (repository in mache.repositories) {
                 maven(repository.url) {
                     name = repository.name
@@ -265,7 +266,7 @@ open class SoftSpoonTasks(
                 }
             }
 
-            maven("https://libraries.minecraft.net/") {
+            maven(MC_LIBRARY_URL) {
                 name = "Minecraft"
             }
             mavenCentral()
@@ -287,14 +288,9 @@ open class SoftSpoonTasks(
             }
         }
         macheMinecraftExtended {
+            extendsFrom(macheMinecraft.get())
             withDependencies {
                 project.dependencies {
-                    val libs = libsFile.convertToPathOrNull()
-                    if (libs != null && libs.exists()) {
-                        libs.forEachLine { line ->
-                            add(create(line))
-                        }
-                    }
                     add(create(project.files(project.layout.cache.resolve(FINAL_REMAPPED_CODEBOOK_JAR))))
                 }
             }
@@ -342,6 +338,13 @@ open class SoftSpoonTasks(
         // impl extends minecraft
         configurations.named(JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME) {
             extendsFrom(macheMinecraft)
+        }
+
+        // repos
+        repositories {
+            mavenCentral()
+            maven(PAPER_MAVEN_REPO_URL)
+            maven(MC_LIBRARY_URL)
         }
 
         // add vanilla source set

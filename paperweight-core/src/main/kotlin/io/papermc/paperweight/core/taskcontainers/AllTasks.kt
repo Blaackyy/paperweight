@@ -103,8 +103,11 @@ open class AllTasks(
     }
 
     val downloadPaperLibrariesSources by tasks.registering<DownloadPaperLibraries> {
-        // TODO this is wrong, but idk how to fix. it needs to be the server deps
-        paperDependencies.set(project.configurations["implementation"].allDependencies.map { "${it.group}:${it.name}:${it.version}" })
+        paperDependencies.set(project.ext.serverProject.map { p ->
+            val configuration = p.configurations["implementation"]
+            configuration.isCanBeResolved = true
+            configuration.resolvedConfiguration.resolvedArtifacts.map { "${it.moduleVersion.id.group}:${it.moduleVersion.id.name}:${it.moduleVersion.id.version}" }
+        })
         repositories.set(listOf(MAVEN_CENTRAL_URL, PAPER_MAVEN_REPO_URL))
         outputDir.set(cache.resolve(PAPER_SOURCES_JARS_PATH))
         sources.set(true)
