@@ -188,7 +188,7 @@ abstract class SetupVanilla : BaseTask() {
         }
 
         if (!libraries.isEmpty && !paperPatches.isEmpty) {
-            val patches = paperPatches.files.flatMap { it.toPath().listDirectoryEntries("*.patch") }
+            val patches = paperPatches.files.flatMap { it.toPath().walk().filter { path -> path.toString().endsWith(".patch") }.toList() }
             McDev.importMcDev(patches, null, devImports.convertToPath(), outputPath, null, libraries.files.map { it.toPath() }, true, "")
 
             commitAndTag(git, "Imports")
