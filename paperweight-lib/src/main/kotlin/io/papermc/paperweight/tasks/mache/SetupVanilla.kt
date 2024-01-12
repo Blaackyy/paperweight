@@ -128,7 +128,12 @@ abstract class SetupVanilla : BaseTask() {
             .forEach {
                 val target = outputPath.resolve(it.toString().substring(1))
                 target.parent.createDirectories()
-                it.copyTo(target, true)
+                // make sure we have a trailing newline
+                var content = it.readText()
+                if (!content.endsWith("\n")) {
+                    content += "\n"
+                }
+                target.writeText(content)
             }
 
         println("Setup git repo...")
