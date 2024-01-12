@@ -25,6 +25,7 @@ package io.papermc.paperweight.tasks.softspoon
 import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.patches.*
+import java.nio.file.Path
 import javax.inject.Inject
 import kotlin.io.path.*
 import org.eclipse.jgit.api.Git
@@ -87,11 +88,20 @@ abstract class ApplyFilePatches : BaseTask() {
     open fun setup() {
         io.papermc.paperweight.util.Git.checkForGit()
 
-        recreateCloneDirectory(output.convertToPath())
+        val outputPath = output.convertToPath()
+        recreateCloneDirectory(outputPath)
 
-        Git(output.convertToPath()).let { git ->
+        Git(outputPath).let { git ->
             checkoutRepoFromUpstream(git, input.convertToPath(), "main", "mache", "main")
         }
+
+        setupGitHook(outputPath)
+    }
+
+    private fun setupGitHook(outputPath: Path) {
+        val hook = outputPath.resolve(".git/hooks/post-rewrite")
+        hook.parent.createDirectories()
+        hook.writeText(javaClass.getResource("/post-rewrite.sh")!!.readText())
     }
 
     open fun commit() {
