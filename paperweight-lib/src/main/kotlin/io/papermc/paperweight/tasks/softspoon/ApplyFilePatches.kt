@@ -85,22 +85,13 @@ abstract class ApplyFilePatches : BaseTask() {
     }
 
     open fun setup() {
-        //io.papermc.paperweight.util.Git.checkForGit()
-//
-        //Git(input.convertToPath()).let { git ->
-        //    git("fetch").setupOut().run()
-        //    git("branch", "-f", "mache", "main").runSilently(silenceErr = true)
-        //}
-//
-        //recreateCloneDirectory(output.convertToPath())
+        io.papermc.paperweight.util.Git.checkForGit()
 
+        recreateCloneDirectory(output.convertToPath())
 
-        // TODO instead of deleting, we can maybe reset back to mache's base commit and then apply the patches?s
-        output.convertToPath().ensureClean()
-        Git.cloneRepository().setBranch(
-            "main"
-        ).setRemote("mache").setURI("file://" + input.convertToPath().toString()).setDirectory(output.convertToPath().toFile())
-            .call().close()
+        Git(output.convertToPath()).let { git ->
+            checkoutRepoFromUpstream(git, input.convertToPath(), "main", "mache", "main")
+        }
     }
 
     open fun commit() {
@@ -112,6 +103,7 @@ abstract class ApplyFilePatches : BaseTask() {
             .setAuthor(ident)
             .setSign(false)
             .call()
+        git.tagDelete().setTags("file").call()
         git.tag().setName("file").setTagger(ident).setSigned(false).call()
         git.close()
     }

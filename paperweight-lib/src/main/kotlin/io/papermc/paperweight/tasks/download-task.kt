@@ -133,7 +133,6 @@ abstract class DownloadPaperLibraries : BaseTask() {
 
     @TaskAction
     fun run() {
-        println("paperDeps " + paperDependencies.get())
         downloadLibraries(
             downloader,
             workerExecutor,

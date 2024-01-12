@@ -34,6 +34,7 @@ import javax.inject.Inject
 import kotlin.io.path.*
 import org.cadixdev.at.io.AccessTransformFormats
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.ResetCommand
 import org.eclipse.jgit.lib.PersonIdent
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -101,7 +102,25 @@ abstract class SetupVanilla : BaseTask() {
 
     @TaskAction
     fun run() {
-        val outputPath = outputDir.convertToPath().ensureClean()
+        val outputPath = outputDir.convertToPath()
+
+        val git: Git
+        if (outputPath.resolve(".git/HEAD").isRegularFile()) {
+            git = Git.open(outputPath.toFile())
+            git.reset().setRef("ROOT").setMode(ResetCommand.ResetType.HARD).call()
+        } else {
+            outputPath.createDirectories()
+
+            git = Git.init()
+                .setDirectory(outputPath.toFile())
+                .setInitialBranch("main")
+                .call()
+
+            val rootIdent = PersonIdent("ROOT", "root@automated.papermc.io")
+            git.commit().setMessage("ROOT").setAllowEmpty(true).setAuthor(rootIdent).setSign(false).call()
+            git.tagDelete().setTags("ROOT").call()
+            git.tag().setName("ROOT").setTagger(rootIdent).setSigned(false).call()
+        }
 
         println("Copy initial sources...")
         inputFile.convertToPath().openZip().walk()
@@ -113,19 +132,7 @@ abstract class SetupVanilla : BaseTask() {
             }
 
         println("Setup git repo...")
-        val vanillaIdent = PersonIdent("Vanilla", "vanilla@automated.papermc.io")
-
-        val git = Git.init()
-            .setDirectory(outputPath.toFile())
-            .setInitialBranch("main")
-            .call()
-        git.add().addFilepattern(".").call()
-        git.commit()
-            .setMessage("Vanilla")
-            .setAuthor(vanillaIdent)
-            .setSign(false)
-            .call()
-        git.tag().setName("vanilla").setTagger(vanillaIdent).setSigned(false).call()
+        commitAndTag(git, "Vanilla")
 
         if (machePatches.isPresent) {
             // prepare for patches for patching
@@ -138,14 +145,7 @@ abstract class SetupVanilla : BaseTask() {
             println("Applying mache patches...")
             val result = createPatcher().applyPatches(outputPath, machePatches.convertToPath(), outputPath, outputPath)
 
-            val macheIdent = PersonIdent("Mache", "mache@automated.papermc.io")
-            git.add().addFilepattern(".").call()
-            git.commit()
-                .setMessage("Mache")
-                .setAuthor(macheIdent)
-                .setSign(false)
-                .call()
-            git.tag().setName("mache").setTagger(macheIdent).setSigned(false).call()
+            commitAndTag(git, "Mache")
 
             if (result is PatchFailure) {
                 result.failures
@@ -179,31 +179,30 @@ abstract class SetupVanilla : BaseTask() {
                 }
             }
 
-            val macheIdent = PersonIdent("ATs", "ats@automated.papermc.io")
-            git.add().addFilepattern(".").call()
-            git.commit()
-                .setMessage("ATs")
-                .setAuthor(macheIdent)
-                .setSign(false)
-                .call()
-            git.tag().setName("ATs").setTagger(macheIdent).setSigned(false).call()
+            commitAndTag(git, "ATs")
         }
 
         if (!libraries.isEmpty && !paperPatches.isEmpty) {
             val patches = paperPatches.files.flatMap { it.toPath().listDirectoryEntries("*.patch") }
             McDev.importMcDev(patches, null, devImports.convertToPath(), outputPath, null, libraries.files.map { it.toPath() }, true, "")
 
-            val macheIdent = PersonIdent("Imports", "imports@automated.papermc.io")
-            git.add().addFilepattern(".").call()
-            git.commit()
-                .setMessage("Imports")
-                .setAuthor(macheIdent)
-                .setSign(false)
-                .call()
-            git.tag().setName("Imports").setTagger(macheIdent).setSigned(false).call()
+            commitAndTag(git, "Imports")
         }
 
         git.close()
+    }
+
+    private fun commitAndTag(git: Git, name: String) {
+        val vanillaIdent = PersonIdent(name, "${name.lowercase()}@automated.papermc.io")
+
+        git.add().addFilepattern(".").call()
+        git.commit()
+            .setMessage(name)
+            .setAuthor(vanillaIdent)
+            .setSign(false)
+            .call()
+        git.tagDelete().setTags(name).call()
+        git.tag().setName(name).setTagger(vanillaIdent).setSigned(false).call()
     }
 
     internal open fun createPatcher(): Patcher {
