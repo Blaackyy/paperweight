@@ -67,7 +67,6 @@ abstract class ApplySourceAT : BaseTask() {
 
     @TaskAction
     fun run() {
-
         val queue = worker.processIsolation {
             forkOptions {
                 maxHeapSize = "2G"
@@ -119,7 +118,7 @@ abstract class RestampWorker : WorkAction<RestampWorker.Params> {
                     println("Ignoring ${result.before?.sourcePath} because result.after is null?")
                     return@forEach
                 }
-                result.after?.let {  after ->
+                result.after?.let { after ->
                     zip.getPath(after.sourcePath.toString()).writeText(after.printAll())
                     alreadyWritten.add("/" + after.sourcePath.toString())
                 }
