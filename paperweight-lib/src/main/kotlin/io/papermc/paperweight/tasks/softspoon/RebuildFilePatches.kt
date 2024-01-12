@@ -83,6 +83,10 @@ abstract class RebuildFilePatches : BaseTask() {
 
         val oldAts = if (atFile.isPresent) AccessTransformFormats.FML.read(atFile.convertToPath()) else AccessTransformSet.create()
 
+        val git = Git(inputDir)
+        git("stash", "push").executeSilently(silenceErr = true)
+        git("checkout", "file").executeSilently(silenceErr = true)
+
         val patchesCreated = baseDir.walk()
             .map { it.relativeTo(baseDir).toString().replace("\\", "/") }
             .filter {
@@ -91,6 +95,9 @@ abstract class RebuildFilePatches : BaseTask() {
             .sumOf {
                 diffFile(inputDir, baseDir, it, patchDir, oldAts)
             }
+
+        git("switch", "-").executeSilently(silenceErr = true)
+        git("stash", "pop").runSilently(silenceErr = true)
 
         logger.lifecycle("Rebuilt $patchesCreated patches")
     }
