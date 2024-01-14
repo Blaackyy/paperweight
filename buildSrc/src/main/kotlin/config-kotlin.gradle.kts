@@ -41,6 +41,7 @@ repositories {
         }
     }
     mavenCentral()
+    gradlePluginPortal()
 }
 
 configurations.all {
