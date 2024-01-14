@@ -62,11 +62,11 @@ abstract class RemapCBPatches : BaseTask() {
         val mappings = MappingFormats.TINY.read(mappingsFile.convertToPath(), SPIGOT_NAMESPACE, NEW_DEOBF_NAMESPACE)
 
         val configFiles = project.project(":paper-server").configurations["runtimeClasspath"].resolve().map { it.toPath() }
-        val classpath = configFiles + listOf(
+        val classpath = (configFiles + listOf(
             project.project(":paper-api").projectDir.toPath().resolve("src/main/java"),
             project.file(".gradle/caches/paperweight/taskCache/spigotRemapJar.jar").toPath(),
             Path.of("C:\\Users\\Martin\\.m2\\repository\\org\\jetbrains\\annotations\\24.0.1\\annotations-24.0.1.jar")
-        )
+        )).filter { it.exists() }
 
         val merc = Mercury()
         merc.classPath.addAll(classpath)
@@ -75,13 +75,14 @@ abstract class RemapCBPatches : BaseTask() {
                 MercuryRemapper.create(mappings)
             )
         )
+        merc.sourceCompatibility = "17"
         merc.isGracefulClasspathChecks = true
         merc.rewrite(craftBukkit.convertToPath().resolve("src/main/java"), workDir)
 
         val inputDir = workDir
-        val baseDir = Path.of("D:\\IdeaProjects\\Paper\\.gradle\\caches\\paperweight\\mache\\dum")
+        val baseDir = base.convertToPath()
 
-        val patchesCreated = baseDir.walk()
+        val patchesCreated = baseDir.walk().filter { it.isRegularFile() && it.name.endsWith(".java") }
             .sumOf {
                 diffFile(inputDir, baseDir, it.relativeTo(baseDir).toString().replace("\\", "/"), patches)
             }

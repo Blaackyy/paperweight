@@ -169,7 +169,7 @@ abstract class SetupVanilla : BaseTask() {
             val configuration = RestampContextConfiguration.builder()
                 .accessTransformers(ats.convertToPath(), AccessTransformFormats.FML)
                 .sourceRoot(outputPath)
-                .sourceFilesFromAccessTransformers()
+                .sourceFilesFromAccessTransformers(false)
                 .classpath(classPath)
                 .executionContext(InMemoryExecutionContext { it.printStackTrace() })
                 .failWithNotApplicableAccessTransformers()

@@ -241,7 +241,7 @@ open class SoftSpoonTasks(
         // craftBukkit.set(allTasks.patchCraftBukkit.flatMap { it.outputDir })
         craftBukkit.set(project.layout.cache.resolve("paperweight/taskCache/patchCraftBukkit.repo"))
         outputPatchDir.set(project.layout.projectDirectory.dir("patches/remapped-cb"))
-        // mappingsFile.set(allTasks.patchMappings.flatMap { it.outputMappings })
+        // mappingsFile.set(generatePatchRemapMappings.flatMap { it.patchRemapMappings })
         mappingsFile.set(layout.cache.resolve(SPIGOT_MOJANG_PARCHMENT_MAPPINGS))
     }
 
