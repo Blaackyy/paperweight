@@ -26,14 +26,17 @@ import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
 import com.github.difflib.patch.Patch
 import com.github.difflib.patch.PatchFailedException
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.*
+import kotlin.streams.asStream
 
 internal open class JavaPatcher : Patcher {
 
     override fun applyPatches(baseDir: Path, patchDir: Path, outputDir: Path, failedDir: Path): PatchResult {
         var result = baseDir.walk()
+            .asStream()
             .map { original ->
                 val relPath = original.relativeTo(baseDir)
                 val patchPath = relPath.resolveSibling("${relPath.name}.patch").toString()
@@ -41,8 +44,12 @@ internal open class JavaPatcher : Patcher {
                 val patched = outputDir.resolve(relPath.toString())
                 PatchTask(patch, original, patched)
             }
+            .filter { Files.isRegularFile(it.patch) }
+            .parallel()
+            .map { applyPatch(it) }
+            .toList()
             .fold<_, PatchResult>(PatchSuccess) { acc, value ->
-                acc.fold(applyPatch(value))
+                acc.fold(value)
             }
 
         result = patchDir.walk()

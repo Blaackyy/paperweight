@@ -118,7 +118,7 @@ open class SoftSpoonTasks(
         group = "mache"
         description = "Setup vanilla resources dir"
 
-        inputFile.set(macheDecompileJar.flatMap { it.outputJar })
+        inputFile.set(allTasks.extractFromBundler.flatMap { it.serverJar })
         predicate.set { Files.isRegularFile(it) && !it.toString().endsWith(".java") }
         outputDir.set(layout.cache.resolve(BASE_PROJECT).resolve("resources"))
     }

@@ -66,6 +66,9 @@ abstract class DownloadTask : DefaultTask() {
 }
 
 @CacheableTask
+abstract class CacheableDownloadTask : DownloadTask()
+
+@CacheableTask
 abstract class DownloadMcLibraries : BaseTask() {
 
     @get:InputFile
