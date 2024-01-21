@@ -62,11 +62,13 @@ abstract class RemapCBPatches : BaseTask() {
         val mappings = MappingFormats.TINY.read(mappingsFile.convertToPath(), SPIGOT_NAMESPACE, NEW_DEOBF_NAMESPACE)
 
         val configFiles = project.project(":paper-server").configurations["runtimeClasspath"].resolve().map { it.toPath() }
-        val classpath = (configFiles + listOf(
-            project.project(":paper-api").projectDir.toPath().resolve("src/main/java"),
-            project.file(".gradle/caches/paperweight/taskCache/spigotRemapJar.jar").toPath(),
-            Path.of("C:\\Users\\Martin\\.m2\\repository\\org\\jetbrains\\annotations\\24.0.1\\annotations-24.0.1.jar")
-        )).filter { it.exists() }
+        val classpath = (
+            configFiles + listOf(
+                project.project(":paper-api").projectDir.toPath().resolve("src/main/java"),
+                project.file(".gradle/caches/paperweight/taskCache/spigotRemapJar.jar").toPath(),
+                Path.of("C:\\Users\\Martin\\.m2\\repository\\org\\jetbrains\\annotations\\24.0.1\\annotations-24.0.1.jar")
+            )
+            ).filter { it.exists() }
 
         val merc = Mercury()
         merc.classPath.addAll(classpath)
@@ -105,9 +107,9 @@ abstract class RemapCBPatches : BaseTask() {
         }
 
         // remove all non craftbukkit chunks
-        // patch.deltas.removeIf {
-        //    !it.target.lines.any { line -> line.contains("CraftBukkit") && !line.contains("decompile error") }
-        // }
+        patch.deltas.removeIf {
+            !it.target.lines.any { line -> line.contains("CraftBukkit") && !line.contains("decompile error") }
+        }
 
         val unifiedPatch = UnifiedDiffUtils.generateUnifiedDiff(
             "a/$relativePath",

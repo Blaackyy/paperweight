@@ -26,6 +26,7 @@ import io.papermc.paperweight.core.ext
 import io.papermc.paperweight.tasks.*
 import io.papermc.paperweight.tasks.mache.*
 import io.papermc.paperweight.tasks.mache.RemapJar
+import io.papermc.paperweight.tasks.patchremapv2.Dum
 import io.papermc.paperweight.tasks.patchremapv2.GeneratePatchRemapMappings
 import io.papermc.paperweight.tasks.patchremapv2.RemapCBPatches
 import io.papermc.paperweight.tasks.softspoon.ApplyFeaturePatches
@@ -91,7 +92,13 @@ open class SoftSpoonTasks(
         patchDir.set(project.ext.paper.featurePatchDir)
     }
 
+    val mergeAT1 by tasks.registering<MergeAccessTransforms> {
+        firstFile.set(project.ext.paper.additionalAts.fileExists(project))
+        secondFile.set(allTasks.mergeAdditionalAts.flatMap { it.outputFile })
+    }
+
     val mergeCollectedAts by tasks.registering<MergeAccessTransforms> {
+        // firstFile.set(mergeAT1.flatMap { it.outputFile }) // TODO only used for CB remap, remove later
         firstFile.set(project.ext.paper.additionalAts.fileExists(project))
         secondFile.set(collectAccessTransform.flatMap { it.outputFile })
     }
@@ -216,6 +223,23 @@ open class SoftSpoonTasks(
     }
 
     // patch remap stuff
+    val dum by tasks.registering<Dum> {
+        group = "patchremap"
+
+        //spigotVanilla.set(allTasks.spigotDecompileJar.flatMap { it.outputJar })
+        spigotVanilla.set( layout.cache.resolve(paperTaskOutput("spigotDecompileJar", "jar")) )
+        //spigotVanillaRemapped.set(allTasks.decompileJar.flatMap { it.outputJar })
+        spigotVanillaRemapped.set(layout.cache.resolve(FINAL_DECOMPILE_JAR))
+        //macheSpigot.set(macheSpigotDecompileJar.flatMap { it.outputJar })
+        macheSpigot.set(layout.cache.resolve(paperTaskOutput("macheSpigotDecompileJar", "jar")) )
+        //macheVanilla.set(macheDecompileJar.flatMap { it.outputJar })
+        macheVanilla.set(layout.cache.resolve(FINAL_DECOMPILE_JAR))
+        //remappedSpigot.set(allTasks.remapSpigotSources.flatMap { it.sourcesOutputZip })
+        remappedSpigot.set(layout.cache.resolve(paperTaskOutput("remapSpigotSources-sources", "jar")))
+
+        outputPatchDir.set(project.layout.projectDirectory.dir("patch-remap/dum"))
+    }
+
     val macheSpigotDecompileJar by tasks.registering<SpigotDecompileJar> {
         group = "patchremap"
         inputJar.set(macheRemapJar.flatMap { it.outputJar })
@@ -237,10 +261,12 @@ open class SoftSpoonTasks(
 
     val remapCBPatches by tasks.registering(RemapCBPatches::class) {
         group = "patchremap"
-        base.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
+        // base.set(setupMacheSources.flatMap { it.outputDir })
+        // base.set(layout.cache.resolve(BASE_PROJECT).resolve("sources"))
+        base.set(layout.cache.resolve("paperweight/taskCache/macheSpigotDecompileJar"))
         // craftBukkit.set(allTasks.patchCraftBukkit.flatMap { it.outputDir })
         craftBukkit.set(project.layout.cache.resolve("paperweight/taskCache/patchCraftBukkit.repo"))
-        outputPatchDir.set(project.layout.projectDirectory.dir("patches/remapped-cb"))
+        outputPatchDir.set(project.layout.projectDirectory.dir("patch-remap/mache-spigotflower-stripped"))
         // mappingsFile.set(generatePatchRemapMappings.flatMap { it.patchRemapMappings })
         mappingsFile.set(layout.cache.resolve(SPIGOT_MOJANG_PARCHMENT_MAPPINGS))
     }

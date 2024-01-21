@@ -11,7 +11,7 @@ java {
 }
 
 tasks.withType(JavaCompile::class).configureEach {
-    options.release = 11
+    options.release = 17
 }
 
 kotlin {
@@ -21,8 +21,8 @@ kotlin {
     target {
         compilations.configureEach {
             kotlinOptions {
-                jvmTarget = "11"
-                freeCompilerArgs = listOf("-Xjvm-default=all", "-Xjdk-release=11", "-opt-in=kotlin.io.path.ExperimentalPathApi")
+                jvmTarget = "17"
+                freeCompilerArgs = listOf("-Xjvm-default=all", "-Xjdk-release=17", "-opt-in=kotlin.io.path.ExperimentalPathApi")
             }
         }
     }
